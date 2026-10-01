@@ -141,9 +141,9 @@ func test_get_yaw_reports_the_rotation_of_the_rig() -> void:
 	assert_almost_eq(_rig.get_yaw(), 0.5, 0.0001, "and would be passed on if something turned the rig")
 
 
-## A stand-in for the player. The rig reads where its target is drawn, and in the frame of a
-## snap where it stands. A node that a test moves by hand has no physics ticks to be drawn
-## between, so its interpolation is off and the two are the same place.
+## A stand-in for the player. The rig reads where its target is drawn, and after a snap made
+## late in a frame where it stands. A node that a test moves by hand has no physics ticks to
+## be drawn between, so its interpolation is off and the two are the same place.
 func _make_target(at: Vector3) -> Node3D:
 	var target := Node3D.new()
 	target.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF

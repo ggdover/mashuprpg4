@@ -1,8 +1,8 @@
 extends GutTest
 ## The J02 test scene as a whole: the player, the camera rig, the arena and the debug overlay
 ## are wired together, W goes up the screen, the player turns to the mouse, the rig follows
-## what is drawn and stays on a player that is teleported, and holding skill_1 stands in for
-## the attack slowdown.
+## what is drawn, stays on a player that is teleported and follows it on when it walks
+## through the teleport, and holding skill_1 stands in for the attack slowdown.
 ##
 ## The scene runs in a viewport of its own. That gives the tests a mouse they can place and a
 ## camera nothing competes for, in a window as well as headless.
@@ -32,6 +32,10 @@ const TELEPORT := Vector3(9.0, 0.0, -12.0)
 const TELEPORT_FRAMES := 4
 ## Furthest the rig may stand from a player it was snapped to, in metres.
 const ON_TARGET := 0.001
+## Furthest the rig may end a frame from where following the drawn player puts it, in metres.
+const ON_COURSE := 0.0005
+## The key of the input events the tests send themselves. No action is bound to it.
+const TAP_KEY := KEY_F24
 
 var _viewport: SubViewport
 var _scene: Node3D
@@ -150,7 +154,7 @@ func test_the_rig_follows_the_drawn_player_at_every_frame_rate() -> void:
 		add_child_autofree(sampler)
 		await wait_physics_frames(FOLLOW_FRAMES)
 		sampler.set_process(false)
-		assert_lt(sampler.largest_miss, 0.0005, "at %d fps the rig closed, every frame, on where the player was drawn" % fps)
+		assert_lt(sampler.largest_miss, ON_COURSE, "at %d fps the rig closed, every frame, on where the player was drawn" % fps)
 		if fps == UNEVEN_FPS and DisplayServer.get_name() == "headless":
 			# Only a headless run is free of the monitor: a window may be held to its refresh
 			# rate, and frames in step with the ticks cannot tell the two apart.
@@ -169,6 +173,23 @@ func test_a_teleport_in_a_physics_tick_leaves_no_glide() -> void:
 	await _assert_a_teleport_leaves_no_glide(get_tree().physics_frame)
 
 
+func test_a_teleport_in_an_input_event_leaves_no_glide() -> void:
+	await _assert_a_teleport_leaves_no_glide(_tap_input_events())
+
+
+func test_a_walk_through_a_teleport_in_a_physics_tick_is_followed_as_drawn() -> void:
+	# The player walks on in the tick it is teleported in, and the frame draws it up to a
+	# tick of travel behind where it then stands. A rig that headed for the player's own
+	# position in that frame would run ahead of the picture, by up to 23 mm at 30 fps.
+	await _assert_a_walk_through_a_teleport_is_followed_as_drawn(get_tree().physics_frame)
+
+
+func test_a_walk_through_a_teleport_in_an_input_event_is_followed_as_drawn() -> void:
+	# A key press or a click reaches a script ahead of the frame's physics ticks, so the
+	# player walks on in the same frame here too.
+	await _assert_a_walk_through_a_teleport_is_followed_as_drawn(_tap_input_events())
+
+
 ## Puts the mouse over [param point] on the ground, the way a player would point at it.
 func _point_mouse_at(point: Vector3) -> void:
 	var motion := InputEventMouseMotion.new()
@@ -177,9 +198,23 @@ func _point_mouse_at(point: Vector3) -> void:
 	_viewport.push_input(motion, true)
 
 
-## Teleports the player the way J12's zone change and J20's respawn will, as soon as
-## [param resumed_by] fires, once at each frame rate: move it, reset its interpolation, snap
-## the rig. Asserts that the rig stands on the player from that very frame on.
+## A signal that fires once every rendered frame from inside the handling of an input event.
+func _tap_input_events() -> Signal:
+	var tap := InputTap.new()
+	add_child_autofree(tap)
+	return tap.arrived
+
+
+## Teleports the player by [param jump] the way J12's zone change and J20's respawn will:
+## move it, reset its interpolation, snap the rig.
+func _teleport(jump: Vector3) -> void:
+	_player.global_position += jump
+	_player.reset_physics_interpolation()
+	_rig.snap_to_target()
+
+
+## Teleports the standing player as soon as [param resumed_by] fires, once at each frame
+## rate. Asserts that the rig stands on the player from that very frame on.
 func _assert_a_teleport_leaves_no_glide(resumed_by: Signal) -> void:
 	var max_fps := Engine.max_fps
 	var jump := TELEPORT
@@ -189,9 +224,7 @@ func _assert_a_teleport_leaves_no_glide(resumed_by: Signal) -> void:
 		await wait_process_frames(2)
 		await resumed_by
 		var frame := Engine.get_process_frames()
-		_player.global_position += jump
-		_player.reset_physics_interpolation()
-		_rig.snap_to_target()
+		_teleport(jump)
 		var sampler := StraySampler.new()
 		sampler.rig = _rig
 		sampler.target = _player
@@ -207,6 +240,37 @@ func _assert_a_teleport_leaves_no_glide(resumed_by: Signal) -> void:
 	Engine.max_fps = max_fps
 
 
+## Walks the player through a teleport made as soon as [param resumed_by] fires, once at
+## each frame rate. Asserts that the rig ends the frame of the teleport, and the frames
+## after it, where following the drawn player puts it.
+func _assert_a_walk_through_a_teleport_is_followed_as_drawn(resumed_by: Signal) -> void:
+	var max_fps := Engine.max_fps
+	var jump := TELEPORT
+	Input.action_press(&"move_up")
+	await wait_physics_frames(TURN_FRAMES)
+	for fps: int in FRAME_RATES:
+		Engine.max_fps = fps
+		# Two frames for the new cap to set the length of a frame.
+		await wait_process_frames(2)
+		await resumed_by
+		var frame := Engine.get_process_frames()
+		_teleport(jump)
+		var sampler := FollowSampler.new()
+		sampler.rig = _rig
+		sampler.target = _player
+		sampler.process_priority = _rig.process_priority + 1
+		sampler.start_from_here()
+		add_child_autofree(sampler)
+		for i: int in TELEPORT_FRAMES:
+			await get_tree().process_frame
+		sampler.set_process(false)
+		assert_eq(sampler.first_frame, frame, "at %d fps the rig was watched from the frame of the teleport on" % fps)
+		assert_lt(sampler.largest_miss, ON_COURSE, "at %d fps it closed, every frame, on where the player was drawn" % fps)
+		# There, back and there again.
+		jump = -jump
+	Engine.max_fps = max_fps
+
+
 ## Runs right after the rig every rendered frame and works out where the rig should have
 ## ended up had it closed on the drawn position of its target, and on the tick position.
 class FollowSampler:
@@ -214,23 +278,33 @@ class FollowSampler:
 
 	var rig: CameraRig
 	var target: Node3D
-	var frames := 0
+	## The rendered frame the first comparison was made in.
+	var first_frame := -1
 	## Furthest the rig ended from where following the drawn position puts it, in metres.
 	var largest_miss := 0.0
 	## Furthest the rig ended from where following the tick position would have put it.
 	var largest_tick_miss := 0.0
 
 	var _rig_before := Vector3.ZERO
+	var _has_before := false
+
+	## Takes where the rig stands now for where it starts its next frame from, so that the
+	## comparing begins with that frame. Left out, it begins one frame later.
+	func start_from_here() -> void:
+		_rig_before = rig.global_position
+		_has_before = true
 
 	func _process(delta: float) -> void:
-		if frames > 0:
+		if _has_before:
+			if first_frame < 0:
+				first_frame = Engine.get_process_frames()
 			var weight := 1.0 - exp(-rig.follow_rate * delta)
 			var drawn := _rig_before.lerp(target.get_global_transform_interpolated().origin, weight)
 			var ticked := _rig_before.lerp(target.global_position, weight)
 			largest_miss = maxf(largest_miss, rig.global_position.distance_to(drawn))
 			largest_tick_miss = maxf(largest_tick_miss, rig.global_position.distance_to(ticked))
 		_rig_before = rig.global_position
-		frames += 1
+		_has_before = true
 
 
 ## Runs right after the rig every rendered frame and keeps how far the rig stood from its
@@ -251,3 +325,23 @@ class StraySampler:
 			first_frame = Engine.get_process_frames()
 		largest = maxf(largest, rig.global_position.distance_to(target.global_position))
 		frames += 1
+
+
+## Sends itself an input event every rendered frame and emits [signal arrived] from inside
+## the handling of each. The engine hands an event out when the next frame begins, ahead of
+## that frame's physics ticks: the place in a frame where a key press or a click reaches a
+## script.
+class InputTap:
+	extends Node
+
+	signal arrived
+
+	func _process(_delta: float) -> void:
+		var event := InputEventKey.new()
+		event.physical_keycode = TAP_KEY
+		Input.parse_input_event(event)
+
+	func _input(event: InputEvent) -> void:
+		var key := event as InputEventKey
+		if key != null and key.physical_keycode == TAP_KEY:
+			arrived.emit()

@@ -27,8 +27,11 @@ extends Node3D
 
 ## Where the camera is right now on its way to [member distance].
 var _current_distance := 0.0
-## The rendered frame [method snap_to_target] was last called in; -1 while it never was.
+## The rendered frame of the last [method snap_to_target] that came outside a physics tick;
+## -1 while there was none, and after a snap that came inside a tick.
 var _snap_frame := -1
+## How many physics ticks had begun when [method snap_to_target] was last called.
+var _snap_tick := -1
 
 ## The camera. Its place under the rig is set from the pitch and the distance every frame.
 @onready var camera: Camera3D = $Camera
@@ -72,23 +75,30 @@ func zoom(metres: float) -> void:
 
 
 ## Jumps to the target and to the zoom distance without gliding: for the start of a scene
-## and for teleports. The jump holds for the rest of the rendered frame it is called in,
-## wherever in that frame the call comes from.
+## and for teleports. It works from anywhere in a frame: the rig stays on its target, and
+## when the target moves on, it follows where the target is drawn as on any other frame.
 func snap_to_target() -> void:
 	if is_instance_valid(target):
 		global_position = target.global_position
 	_current_distance = distance
-	_snap_frame = Engine.get_process_frames()
+	_snap_frame = -1 if Engine.is_in_physics_frame() else Engine.get_process_frames()
+	_snap_tick = Engine.get_physics_frames()
 	_place_camera()
 
 
-## Where the rig is headed: the position its target is drawn at. What the engine hands out
-## for that during a rendered frame was worked out when the frame began. After a teleport
-## made within the frame it is still the old place, although the frame will draw the target
-## at the new one, and easing toward it would pull the rig back off the target it was just
-## put on. For the rest of the frame of a snap the rig heads for the target's own position.
+## Where the rig is headed: the position its target is drawn at. The engine works that out
+## for a rendered frame when the frame's physics ticks are done, ahead of every _process. A
+## teleport made later in the frame comes too late for it: the engine goes on handing out
+## the old place, although the frame will draw the target at the new one, and easing toward
+## the old place would pull the rig back off the target it was just put on. After a snap
+## made that late the rig heads for the target's own position for the rest of the frame.
+##
+## A snap made in a physics tick, or ahead of one in an input event, is in time and must
+## not hold: the engine works out the drawn position after it, and when the target moves
+## on, its own position is up to a tick of travel ahead of that. So the rig holds only
+## while no tick has run since a snap made outside one.
 func _get_follow_position() -> Vector3:
-	if Engine.get_process_frames() == _snap_frame:
+	if Engine.get_process_frames() == _snap_frame and Engine.get_physics_frames() == _snap_tick:
 		return target.global_position
 	return target.get_global_transform_interpolated().origin
 
