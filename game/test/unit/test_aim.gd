@@ -3,6 +3,10 @@ extends GutTest
 ## flat unit direction; a ray or a point that gives no direction keeps the last one.
 
 const TOLERANCE := Vector3.ONE * 0.0001
+## Size in pixels of the viewport the camera test runs in.
+const VIEW_SIZE := Vector2i(800, 600)
+## How far above the ground the camera of that test hangs, in metres.
+const CAMERA_HEIGHT := 20.0
 
 var _origin: Node3D
 var _aim: Aim
@@ -76,18 +80,42 @@ func test_aim_starts_where_the_player_faces() -> void:
 
 
 func test_aim_follows_the_mouse_through_the_active_camera() -> void:
+	# A viewport of its own gives the test a mouse it can place, in a window as well as
+	# headless: a SubViewport takes its mouse position from the last mouse event handed to it.
+	var viewport := SubViewport.new()
+	viewport.size = VIEW_SIZE
+	add_child_autofree(viewport)
+	var below := Vector3(3.0, 0.0, -2.0)
 	var camera := Camera3D.new()
-	camera.position = Vector3(3.0, 20.0, 12.0)
-	camera.rotation_degrees.x = -55.0
-	add_child_autofree(camera)
-	camera.make_current()
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+	camera.position = below + Vector3.UP * CAMERA_HEIGHT
+	camera.rotation.x = -PI * 0.5
+	viewport.add_child(camera)
+	var origin := Node3D.new()
+	var aim := Aim.new()
+	origin.add_child(aim)
+	viewport.add_child(origin)
 
-	var mouse := get_viewport().get_mouse_position()
-	var expected: Variant = Plane(Vector3.UP, 0.0).intersects_ray(camera.project_ray_origin(mouse), camera.project_ray_normal(mouse))
-	assert_not_null(expected, "a camera looking down sees the ground under the mouse")
-	var point: Vector3 = expected
-	assert_almost_eq(_aim.aim_point, point, TOLERANCE, "the aim point is the ground under the mouse")
-	var flat := Vector3(point.x, 0.0, point.z).normalized()
-	assert_almost_eq(_aim.aim_dir, flat, TOLERANCE, "and the direction leads there")
+	_put_mouse(viewport, Vector2(VIEW_SIZE) * 0.5)
+	await _steps(2)
+	assert_almost_eq(aim.aim_point, below, TOLERANCE * 10.0, "the middle of the screen is the ground straight below the camera")
+	assert_almost_eq(aim.aim_dir, below.normalized(), TOLERANCE * 10.0, "and the direction leads there")
+
+	# The camera looks straight down with -Z up the screen, so the top edge of the picture
+	# lies half the vertical field of view further along -Z.
+	_put_mouse(viewport, Vector2(VIEW_SIZE.x * 0.5, 0.0))
+	await _steps(2)
+	var reach := CAMERA_HEIGHT * tan(deg_to_rad(camera.fov * 0.5))
+	assert_almost_eq(aim.aim_point, below + Vector3.FORWARD * reach, Vector3.ONE * 0.01, "the top edge of the screen is that much further up")
+
+
+## Hands [param viewport] a mouse motion to [param at], in its own pixels.
+func _put_mouse(viewport: SubViewport, at: Vector2) -> void:
+	var motion := InputEventMouseMotion.new()
+	motion.position = at
+	motion.global_position = at
+	viewport.push_input(motion, true)
+
+
+func _steps(count: int) -> void:
+	for i: int in count:
+		await get_tree().physics_frame

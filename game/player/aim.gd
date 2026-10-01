@@ -13,11 +13,15 @@ extends Node
 var aim_point: Vector3:
 	get:
 		return _aim_point
+	set(_value):
+		push_error("Aim.aim_point is read-only.")
 ## Unit vector on the XZ plane from the player toward [member aim_point]. Keeps its last
 ## valid value while the mouse has no ground point or sits on the player. Read-only.
 var aim_dir: Vector3:
 	get:
 		return _aim_dir
+	set(_value):
+		push_error("Aim.aim_dir is read-only.")
 
 var _aim_point := Vector3.ZERO
 var _aim_dir := Vector3.FORWARD

@@ -48,18 +48,26 @@ var is_invulnerable: bool = false
 var move_dir: Vector3:
 	get:
 		return _move_dir
+	set(_value):
+		push_error("Player.move_dir is read-only.")
 ## False while the player may not start an attack or a skill: during a dash. Read-only.
 var can_act: bool:
 	get:
 		return not _is_dodging
+	set(_value):
+		push_error("Player.can_act is read-only.")
 ## True while a dash is under way. Read-only.
 var is_dodging: bool:
 	get:
 		return _is_dodging
+	set(_value):
+		push_error("Player.is_dodging is read-only.")
 ## Seconds until the next dodge may start, 0 when it is ready. Read-only.
 var dodge_cooldown_left: float:
 	get:
 		return _dodge_cooldown_left
+	set(_value):
+		push_error("Player.dodge_cooldown_left is read-only.")
 
 var _move_dir := Vector3.ZERO
 var _is_dodging := false
