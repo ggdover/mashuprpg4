@@ -16,7 +16,7 @@ Create the Godot project, the folder layout, the input map, the autoload skeleto
 - `game/graybox/` kit: materials and base scenes
 - `game/test/arena.tscn`
 - `game/addons/gut/` installed and enabled, with one passing example test in `game/test/unit/`
-- `tools/godot.cmd` (opens the editor) and `tools/run.cmd` (runs the game) pointing at `C:\Users\filip\Godot_v4.7.2-stable_win64.exe`
+- `tools/godot.cmd` (opens the editor) and `tools/run.cmd` (runs the game) pointing at `C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe`
 - `.gitignore` (created or extended), the J01 commit on `main`
 - `game/README.md`: how to open, run, test
 

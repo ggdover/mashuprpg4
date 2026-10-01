@@ -15,7 +15,7 @@ A playable act 1 of an action RPG in Godot 4.7, with every asset a gray box. Des
 
 | Topic | Decision | Why |
 |-------|----------|-----|
-| Engine | Godot 4.7.2 stable, found at `C:\Users\filip\Godot_v4.7.2-stable_win64.exe` | Installed. Pin to 4.7.x |
+| Engine | Godot 4.7.2 stable, found at `C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe` | Installed. Pin to 4.7.x |
 | Language | GDScript with static typing, `class_name` on every script | Fastest iteration for a solo project |
 | Dimensions | 3D with a fixed-angle top-down camera | Gray boxes swap cleanly for meshes later; day and fog are lighting and environment presets; the references are 3D |
 | Physics | Jolt (Godot 4.7 default) | Default |
@@ -129,7 +129,7 @@ J01, J02, J03, J04, J07, J08, J06, J05, J10, J18, J11, J12, J13, J14, J09, J15, 
 ## Godot from the command line
 
 The download was extracted into a folder that carries the executable's name, so the real path is
-`C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe`. Use the `_console` build for scripts; it writes output to the terminal. The sibling `Godot_v4.7.2-stable_win64.exe` is the same engine without a console.
+`C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe\Godot_v4.7.2-stable_win64_console.exe`. Use the `_console` build for scripts; it writes output to the terminal. The sibling `Godot_v4.7.2-stable_win64.exe` is the same engine without a console.
 
 From the repo root, with `GODOT` set to that path:
 
