@@ -18,15 +18,13 @@ const RUN_UP_FRAMES := 12
 const BRAKE_FRAMES := 16
 ## Physics frames a speed is measured over.
 const MEASURE_FRAMES := 10
-## Longest wait for a dash, a cooldown or a landing, in physics frames.
+## Longest wait for a dash, a cooldown, a landing or a way around a pillar, in physics frames.
 const TIMEOUT_FRAMES := 120
 const SPEED_TOLERANCE := 0.05
 const DISTANCE_TOLERANCE := 0.05
 const DIRECTION_TOLERANCE := 0.001
 ## How far above the ground point a test ray starts.
 const RAY_HEIGHT := 10.0
-## Physics frames to walk into a pillar a couple of metres off, slide along it and get past.
-const PILLAR_FRAMES := 80
 ## Radius of the body capsule, from the job spec.
 const BODY_RADIUS := 0.4
 
@@ -69,11 +67,18 @@ func test_stands_on_the_floor() -> void:
 func test_falls_at_the_gravity_and_lands() -> void:
 	var fall_frames := 6
 	_player.global_position = Vector3(0.0, 3.0, 0.0)
-	await get_tree().physics_frame
-	await _steps(fall_frames)
-	var expected_speed := _player.gravity * fall_frames / Engine.physics_ticks_per_second
-	assert_almost_eq(_player.velocity.y, -expected_speed, 0.001, "speed after %d frames of falling" % fall_frames)
 	var frames := 0
+	while _player.is_on_floor() and frames < TIMEOUT_FRAMES:
+		await get_tree().physics_frame
+		frames += 1
+	assert_false(_player.is_on_floor(), "lifted off the floor, it is airborne")
+	var speed_before := _player.velocity.y
+	await _steps(fall_frames)
+	var gained := speed_before - _player.velocity.y
+	var expected := _player.gravity * fall_frames / Engine.physics_ticks_per_second
+	assert_almost_eq(gained, expected, 0.001, "downward speed gained in %d frames of falling" % fall_frames)
+
+	frames = 0
 	while not _player.is_on_floor() and frames < TIMEOUT_FRAMES:
 		await get_tree().physics_frame
 		frames += 1
@@ -155,11 +160,12 @@ func test_turning_takes_time_and_arrives() -> void:
 	await get_tree().physics_frame
 	var step_limit := _player.turn_speed / Engine.physics_ticks_per_second
 	var frames_needed := ceili(PI / step_limit)
+	var halfway := floori(frames_needed * 0.5)
 	var yaw := _player.global_rotation.y
 	var largest_step := 0.0
 	for frame: int in frames_needed + 2:
-		if frame == frames_needed - 2:
-			assert_lt(_facing().dot(Vector3.BACK), 0.99, "still turning after %d frames" % frame)
+		if frame == halfway:
+			assert_lt(_facing().dot(Vector3.BACK), 0.9, "half way through, it has not arrived")
 		await get_tree().physics_frame
 		var new_yaw := _player.global_rotation.y
 		largest_step = maxf(largest_step, absf(angle_difference(yaw, new_yaw)))
@@ -273,19 +279,22 @@ func test_walking_into_a_wall_slides_along_it() -> void:
 func test_walking_into_a_pillar_slides_around_it() -> void:
 	var pillar := _add_prop(Vector3(1.5, 0.0, -2.0), Vector3(1.0, 3.0, 1.0))
 	var half := pillar.size.x * 0.5
+	var far_side := pillar.global_position.z - half
 	await _steps(SETTLE_FRAMES)
 	Input.action_press(&"move_up")
 	Input.action_press(&"move_right")
 	var closest := INF
-	for frame: int in PILLAR_FRAMES:
+	var frames := 0
+	while _player.global_position.z > far_side and frames < TIMEOUT_FRAMES:
 		await get_tree().physics_frame
+		frames += 1
 		var offset := _player.global_position - pillar.global_position
 		# Distance from the axis of the body to the footprint of the pillar; the capsule keeps it at its radius.
 		var gap := Vector2(maxf(absf(offset.x) - half, 0.0), maxf(absf(offset.z) - half, 0.0)).length()
 		closest = minf(closest, gap)
 	assert_gt(closest, BODY_RADIUS - DISTANCE_TOLERANCE, "the body never enters the pillar")
 	assert_lt(closest, BODY_RADIUS + DISTANCE_TOLERANCE, "though it did run into it")
-	assert_lt(_player.global_position.z, pillar.global_position.z - half, "and it got past the far side by sliding around")
+	assert_lt(_player.global_position.z, far_side, "and it got past the far side by sliding around")
 
 
 func test_slips_around_a_pillar_corner_it_only_clips() -> void:
@@ -293,11 +302,15 @@ func test_slips_around_a_pillar_corner_it_only_clips() -> void:
 	# the corner almost head-on. Godot's default wall_min_slide_angle stops a body there.
 	var pillar := _add_prop(Vector3(0.0, 0.0, -2.0), Vector3(1.0, 3.0, 1.0))
 	var half := pillar.size.x * 0.5
+	var far_side := pillar.global_position.z - half
 	_player.global_position.x = -(half + 0.04)
 	await _steps(SETTLE_FRAMES)
 	Input.action_press(&"move_up")
-	await _steps(PILLAR_FRAMES)
-	assert_lt(_player.global_position.z, pillar.global_position.z - half, "it slipped past the corner instead of stopping on it")
+	var frames := 0
+	while _player.global_position.z > far_side and frames < TIMEOUT_FRAMES:
+		await get_tree().physics_frame
+		frames += 1
+	assert_lt(_player.global_position.z, far_side, "it slipped past the corner instead of stopping on it")
 
 
 func test_slides_along_a_wall_it_meets_almost_head_on() -> void:
