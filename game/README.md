@@ -130,6 +130,8 @@ All of it runs in `Player._physics_process`, 60 times a second. The tunables are
 
 Before a dodge starts, the player emits `dodge_requested(request: DodgeRequest)`. A listener that cannot allow it calls `request.deny()`. Nothing listens yet; J04 connects the stamina cost there.
 
+`move_dir`, `can_act`, `is_dodging` and `dodge_cooldown_left` are read-only, and so are `Aim.aim_point` and `Aim.aim_dir`: writing to one pushes an error and changes nothing.
+
 ### Aim
 
 `Aim` casts a ray from the active camera through the mouse onto the horizontal plane at the player's feet, every physics frame, just before the player moves (`process_physics_priority` -1 in `player.tscn`). `aim_point` is where the ray lands. `aim_dir` is the unit direction on the XZ plane from the player to it, and it keeps its last value while the ray misses the plane or the mouse is within `min_aim_distance` (0.1 m) of the player. Skills read `player.aim.aim_dir` at the moment they fire.

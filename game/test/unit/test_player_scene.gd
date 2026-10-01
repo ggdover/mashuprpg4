@@ -13,11 +13,15 @@ const ACTIONS: Array[StringName] = [&"move_up", &"skill_1"]
 ## at half that many pixels, so the mouse and the camera count in different units, as they do
 ## in a stretched window.
 const VIEW_SIZE := Vector2i(1600, 900)
-## Physics frames the player walks for in the walking tests.
+## Physics frames the player walks for in the walking test.
 const WALK_FRAMES := 30
 ## Physics frames for the body to finish any turn: half a turn takes 10 at the default turn speed.
 const TURN_FRAMES := 15
-## A frame rate that is no multiple or divisor of the 60 physics ticks per second.
+## Physics frames the rig is watched for at each frame rate.
+const FOLLOW_FRAMES := 20
+## The frame rates the job asks the follow to be smooth at.
+const FRAME_RATES: Array[int] = [30, 60, 144]
+## The one among them that is no multiple or divisor of the 60 physics ticks per second.
 const UNEVEN_FPS := 144
 
 var _viewport: SubViewport
@@ -121,27 +125,28 @@ func test_the_player_turns_to_the_ground_under_the_mouse() -> void:
 	assert_lt(wanted.dot(_player.move_dir), 0.99, "which is not the way it walks")
 
 
-func test_the_rig_follows_the_drawn_player_not_the_physics_tick() -> void:
+func test_the_rig_follows_the_drawn_player_at_every_frame_rate() -> void:
 	# The player is drawn between its physics ticks. A rig that chased the tick position
 	# instead would make the player shake on screen whenever frames and ticks fall out of
-	# step, so ask for a frame rate that does not divide the tick rate.
+	# step, as they do at 144 frames against 60 ticks a second.
 	var max_fps := Engine.max_fps
-	Engine.max_fps = UNEVEN_FPS
 	Input.action_press(&"move_up")
 	await wait_physics_frames(TURN_FRAMES)
-	var sampler := FollowSampler.new()
-	sampler.rig = _rig
-	sampler.target = _player
-	sampler.process_priority = _rig.process_priority + 1
-	add_child_autofree(sampler)
-	await wait_physics_frames(WALK_FRAMES)
+	for fps: int in FRAME_RATES:
+		Engine.max_fps = fps
+		var sampler := FollowSampler.new()
+		sampler.rig = _rig
+		sampler.target = _player
+		sampler.process_priority = _rig.process_priority + 1
+		add_child_autofree(sampler)
+		await wait_physics_frames(FOLLOW_FRAMES)
+		sampler.set_process(false)
+		assert_lt(sampler.largest_miss, 0.0005, "at %d fps the rig closed, every frame, on where the player was drawn" % fps)
+		if fps == UNEVEN_FPS and DisplayServer.get_name() == "headless":
+			# Only a headless run is sure to get the frame rate it asked for; a window may be
+			# held to the monitor, and frames in step with the ticks cannot tell the two apart.
+			assert_gt(sampler.largest_tick_miss, 0.002, "which at %d fps is not where the last physics tick left it" % fps)
 	Engine.max_fps = max_fps
-
-	assert_lt(sampler.largest_miss, 0.0005, "every frame the rig closed on where the player was drawn")
-	if DisplayServer.get_name() == "headless":
-		# Only a headless run is sure to get the frame rate it asked for; a window may be
-		# held to the monitor, and frames in step with the ticks cannot tell the two apart.
-		assert_gt(sampler.largest_tick_miss, 0.002, "which is not where the last physics tick left it")
 
 
 ## Puts the mouse over [param point] on the ground, the way a player would point at it.
