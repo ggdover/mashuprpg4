@@ -313,6 +313,45 @@ func test_slips_around_a_pillar_corner_it_only_clips() -> void:
 	assert_lt(_player.global_position.z, far_side, "it slipped past the corner instead of stopping on it")
 
 
+func test_walks_round_a_corner_it_meets_dead_centre() -> void:
+	# Walking the diagonal toward a pillar that sits on it, the capsule meets the corner
+	# with nowhere to slide. Left alone it would balance there for as long as the keys are held.
+	var pillar := _add_prop(Vector3(3.5, 0.0, -3.5), Vector3(1.0, 3.0, 1.0))
+	var beyond := _along_north_east(pillar.global_position) + pillar.size.x
+	await _steps(SETTLE_FRAMES)
+	Input.action_press(&"move_up")
+	Input.action_press(&"move_right")
+	var frames := 0
+	while _along_north_east(_player.global_position) < beyond and frames < TIMEOUT_FRAMES:
+		await get_tree().physics_frame
+		frames += 1
+	assert_gt(_along_north_east(_player.global_position), beyond, "it stepped off the corner and walked on")
+
+
+func test_a_dash_is_carried_round_a_corner_it_meets_dead_centre() -> void:
+	var pillar := _add_prop(Vector3(2.0, 0.0, -2.0), Vector3(1.0, 3.0, 1.0))
+	# Along the diagonal the capsule touches the corner half a pillar diagonal and its own
+	# radius short of the middle of the pillar.
+	var meets_corner := _along_north_east(pillar.global_position) - pillar.size.x * sqrt(0.5) - BODY_RADIUS
+	await _steps(SETTLE_FRAMES)
+	Input.action_press(&"move_up")
+	Input.action_press(&"move_right")
+	assert_true(_player.try_dodge())
+	await _wait_for_dash_end()
+	assert_gt(_along_north_east(_player.global_position), meets_corner + 0.75, "the dash did not end on the corner: it slid on round the pillar")
+
+
+func test_a_wall_met_head_on_stops_the_body_where_it_is() -> void:
+	var wall := _add_prop(Vector3(0.0, 0.0, -1.5), Vector3(20.0, 3.0, 0.5))
+	var wall_face := wall.position.z + wall.size.z * 0.5
+	await _steps(SETTLE_FRAMES)
+	Input.action_press(&"move_up")
+	await _steps(RUN_UP_FRAMES * 2)
+	assert_almost_eq(_player.global_position.z, wall_face + BODY_RADIUS, DISTANCE_TOLERANCE, "it stands against the wall")
+	assert_almost_eq(_player.global_position.x, 0.0, 0.0001, "without creeping along it: a wall is no corner")
+	assert_almost_eq(_player.velocity.length(), 0.0, 0.001)
+
+
 func test_slides_along_a_wall_it_meets_almost_head_on() -> void:
 	var turn := deg_to_rad(5.0)
 	_add_prop(Vector3(0.0, 0.0, -2.0), Vector3(50.0, 3.0, 0.5), turn)
@@ -366,3 +405,8 @@ func _wait_for_dash_end() -> int:
 		await get_tree().physics_frame
 		frames += 1
 	return frames
+
+
+## How far [param point] lies along the north-east diagonal, the way W and D walk together.
+func _along_north_east(point: Vector3) -> float:
+	return point.dot(Vector3(1.0, 0.0, -1.0).normalized())

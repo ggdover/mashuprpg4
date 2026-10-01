@@ -12,6 +12,10 @@ extends CharacterBody3D
 ## calls [method DodgeRequest.deny] on [param request]; J04 does when the stamina is short.
 signal dodge_requested(request: DodgeRequest)
 
+## Two directions count as one from this dot product up: a heading and the surface it meets
+## dead centre, or the normals of one flat wall a step apart.
+const ALIGNED := 0.9999
+
 @export_group("Movement")
 ## Top walking speed in m/s, before [member movement_multiplier].
 @export var move_speed := 6.0
@@ -31,6 +35,10 @@ signal dodge_requested(request: DodgeRequest)
 @export_range(0.05, 2.0, 0.01) var dodge_duration := 0.25
 ## Seconds from the start of one dash until the next may start.
 @export var dodge_cooldown := 0.8
+
+@export_group("Corners")
+## Sideways step in metres that takes the body off a corner it has met dead centre.
+@export var corner_step := 0.05
 
 @export_group("Camera")
 ## The rig whose yaw the move keys are relative to, so that W is up on screen. Without a rig
@@ -92,6 +100,7 @@ func _physics_process(delta: float) -> void:
 		_walk(delta)
 	_turn_toward_aim(delta)
 	move_and_slide()
+	_step_off_corner(_dodge_dir if _is_dodging else _move_dir)
 	if _is_dodging and is_zero_approx(_dodge_time_left):
 		_end_dodge()
 
@@ -149,6 +158,35 @@ func _end_dodge() -> void:
 	is_invulnerable = false
 	# Carry on at walking pace where the keys point, or stand: the dash must not coast on.
 	_set_horizontal_velocity(_move_dir * move_speed * movement_multiplier)
+
+
+## A round body that meets a corner dead centre has no side to slide to and would stand
+## still against it. This takes a small step sideways then, and the slide carries it round
+## from there. A flat wall met head-on is left alone.
+func _step_off_corner(heading: Vector3) -> void:
+	if heading.is_zero_approx() or not is_on_wall():
+		return
+	var direction := heading.normalized()
+	var normal := get_wall_normal()
+	if normal.dot(-direction) < ALIGNED:
+		return
+	var right := direction.cross(Vector3.UP)
+	for side: Vector3 in [right, -right]:
+		if _surface_turns_away(direction, side, normal):
+			move_and_collide(side * corner_step)
+			return
+
+
+## Whether a step to [param side] is free and what then blocks the [param heading] is no
+## longer the surface with [param normal]: the mark of a corner, which a wall lacks.
+func _surface_turns_away(heading: Vector3, side: Vector3, normal: Vector3) -> bool:
+	var step := side * corner_step
+	if test_move(global_transform, step):
+		return false
+	var hit := KinematicCollision3D.new()
+	if not test_move(global_transform.translated(step), heading * corner_step, hit):
+		return true
+	return hit.get_normal().dot(normal) < ALIGNED
 
 
 ## Turns the body toward the aim direction at [member turn_speed]. The move direction plays
