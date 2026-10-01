@@ -129,7 +129,7 @@ J01, J02, J03, J04, J07, J08, J06, J05, J10, J18, J11, J12, J13, J14, J09, J15, 
 ## Godot from the command line
 
 The download was extracted into a folder that carries the executable's name, so the real path is
-`C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe\Godot_v4.7.2-stable_win64_console.exe`. Use the `_console` build for scripts; it writes output to the terminal. The sibling `Godot_v4.7.2-stable_win64.exe` is the same engine without a console.
+`C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe`. Use the `_console` build for scripts; it writes output to the terminal. The sibling `Godot_v4.7.2-stable_win64.exe` is the same engine without a console.
 
 From the repo root, with `GODOT` set to that path:
 
