@@ -288,6 +288,28 @@ func test_walking_into_a_pillar_slides_around_it() -> void:
 	assert_lt(_player.global_position.z, pillar.global_position.z - half, "and it got past the far side by sliding around")
 
 
+func test_slips_around_a_pillar_corner_it_only_clips() -> void:
+	# The axis of the body runs 4 cm outside the edge of the pillar, so the capsule meets
+	# the corner almost head-on. Godot's default wall_min_slide_angle stops a body there.
+	var pillar := _add_prop(Vector3(0.0, 0.0, -2.0), Vector3(1.0, 3.0, 1.0))
+	var half := pillar.size.x * 0.5
+	_player.global_position.x = -(half + 0.04)
+	await _steps(SETTLE_FRAMES)
+	Input.action_press(&"move_up")
+	await _steps(PILLAR_FRAMES)
+	assert_lt(_player.global_position.z, pillar.global_position.z - half, "it slipped past the corner instead of stopping on it")
+
+
+func test_slides_along_a_wall_it_meets_almost_head_on() -> void:
+	var turn := deg_to_rad(5.0)
+	_add_prop(Vector3(0.0, 0.0, -2.0), Vector3(50.0, 3.0, 0.5), turn)
+	await _steps(SETTLE_FRAMES)
+	Input.action_press(&"move_up")
+	await _steps(RUN_UP_FRAMES * 3)
+	var along := await _measure_speed(MEASURE_FRAMES)
+	assert_almost_eq(along, _player.move_speed * sin(turn), SPEED_TOLERANCE, "it keeps the part of its speed that runs along the wall, however small")
+
+
 ## Points the aim at [param point] on the ground. These tests have no camera, so the aim
 ## stays where a test puts it.
 func _aim_at(point: Vector3) -> void:
@@ -299,10 +321,11 @@ func _facing() -> Vector3:
 	return -_player.global_basis.z
 
 
-func _add_prop(at: Vector3, size: Vector3) -> BoxProp:
+func _add_prop(at: Vector3, size: Vector3, yaw: float = 0.0) -> BoxProp:
 	var prop: BoxProp = BOX_PROP.instantiate()
 	prop.size = size
 	prop.position = at
+	prop.rotation.y = yaw
 	add_child_autofree(prop)
 	return prop
 

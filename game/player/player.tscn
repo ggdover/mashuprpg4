@@ -10,6 +10,7 @@ height = 1.8
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
+wall_min_slide_angle = 0.0
 script = ExtResource("1_script")
 
 [node name="Collision" type="CollisionShape3D" parent="."]
