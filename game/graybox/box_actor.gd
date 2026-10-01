@@ -23,12 +23,23 @@ extends Node3D
 
 
 func _ready() -> void:
+	_own_resources()
 	_apply()
 
 
 ## The body dimensions in metres.
 func get_body_size() -> Vector3:
 	return Graybox.size_of(size_class)
+
+
+## Swaps the body and nose meshes for copies that only this actor holds, because
+## [method _fit] resizes them in place. [method Node.duplicate] and the editor's Duplicate
+## hand a copy the original's meshes, so without this, resizing one actor would resize both.
+func _own_resources() -> void:
+	if Graybox.is_edited_scene_root(self):
+		return
+	body.mesh = body.mesh.duplicate() as Mesh
+	nose.mesh = nose.mesh.duplicate() as Mesh
 
 
 func _apply() -> void:

@@ -83,13 +83,16 @@ const FOG: Dictionary = {
 
 
 ## The colour of role [param name] in [param state] (a WorldState.State value).
-## Falls back to DAY when the role only exists there (the day accents), and to
-## MISSING, with an error, when it exists in neither.
+## The accents are not paired: a role that only one state has is returned from that
+## state whichever one is asked for, so the fog accents can be read while it is day.
+## A role that neither state has returns MISSING and pushes an error.
 static func role(name: StringName, state: int) -> Color:
-	var table: Dictionary = FOG if state == WorldState.State.FOG else DAY
+	var in_fog: bool = state == WorldState.State.FOG
+	var table: Dictionary = FOG if in_fog else DAY
 	if table.has(name):
 		return table[name]
-	if DAY.has(name):
-		return DAY[name]
+	var other: Dictionary = DAY if in_fog else FOG
+	if other.has(name):
+		return other[name]
 	push_error("Palette: unknown role '%s'" % name)
 	return MISSING

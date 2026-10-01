@@ -21,6 +21,10 @@ GameState="*res://core/game_state.gd"
 WorldState="*res://core/world_state.gd"
 SaveSystem="*res://core/save_system.gd"
 
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+
 [display]
 
 window/size/viewport_width=1600

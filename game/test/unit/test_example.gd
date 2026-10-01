@@ -16,3 +16,14 @@ func test_role_reads_the_requested_state() -> void:
 
 func test_role_falls_back_to_day_for_day_only_roles() -> void:
 	assert_eq(Palette.role(&"sun", WorldState.State.FOG), Palette.DAY["sun"])
+
+
+func test_role_falls_back_to_fog_for_fog_only_roles() -> void:
+	assert_eq(Palette.role(&"ember", WorldState.State.DAY), Palette.FOG["ember"])
+
+
+func test_every_role_resolves_in_both_states() -> void:
+	for state: int in [WorldState.State.DAY, WorldState.State.FOG]:
+		for table: Dictionary in [Palette.DAY, Palette.FOG]:
+			for role_name: String in table:
+				assert_ne(Palette.role(role_name, state), Palette.MISSING, "%s in state %d" % [role_name, state])

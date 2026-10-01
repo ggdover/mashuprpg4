@@ -20,7 +20,18 @@ extends StaticBody3D
 
 
 func _ready() -> void:
+	_own_resources()
 	_apply()
+
+
+## Swaps the mesh and the shape for copies that only this prop holds, because [method _apply]
+## resizes them in place. [method Node.duplicate] and the editor's Duplicate hand a copy the
+## original's mesh and shape, so without this, resizing one prop would resize both.
+func _own_resources() -> void:
+	if Graybox.is_edited_scene_root(self):
+		return
+	mesh_instance.mesh = mesh_instance.mesh.duplicate() as Mesh
+	collision_shape.shape = collision_shape.shape.duplicate() as Shape3D
 
 
 func _apply() -> void:

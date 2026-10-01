@@ -52,3 +52,10 @@ static func make_box(size: Vector3, material: Material) -> MeshInstance3D:
 	var instance := MeshInstance3D.new()
 	instance.mesh = make_box_mesh(size, material)
 	return instance
+
+
+## Whether [param node] is the root of the scene that is open in the editor; always false in
+## a running game. BoxActor and BoxProp keep the sub-resources they were saved with in that
+## one case, so that opening and saving a kit scene does not rewrite its mesh and shape.
+static func is_edited_scene_root(node: Node) -> bool:
+	return Engine.is_editor_hint() and node.is_inside_tree() and node.get_tree().edited_scene_root == node

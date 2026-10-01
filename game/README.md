@@ -10,9 +10,10 @@ From the repo root on Windows:
 |---------|--------------|
 | `tools\godot.cmd` | Opens this project in the Godot editor |
 | `tools\run.cmd` | Runs the game (main scene `res://test/arena.tscn`) without the editor |
-| `tools\test.cmd` | Runs the GUT unit tests in `res://test/unit` headless; exit code 0 means every test passed |
+| `tools\test.cmd` | Runs the GUT unit tests in `res://test/unit` headless; exit code 0 means no test failed |
+| `tools\gut_panel_setup.cmd` | Once per machine: points the GUT panel in the editor at `res://test/unit` (see GUT in the editor) |
 
-All three call `C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe` (the console build, so output lands in the terminal) and pass extra arguments through to Godot.
+All four call `C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe` (the console build, so output lands in the terminal) and pass extra arguments through to Godot.
 
 ### Headless checks
 
@@ -25,11 +26,21 @@ set GODOT=C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64
 tools\test.cmd                                GUT
 ```
 
-No output line may contain `ERROR`, `SCRIPT ERROR` or `Parse Error`. To parse-check one script: `"%GODOT%" --headless --path game --check-only -s res://core/game_state.gd`.
+No output line may contain `ERROR`, `SCRIPT ERROR` or `Parse Error`. Read the lines, not only the exit code: GUT skips a test script that has a parse error and still exits with 0.
+
+These runs compile only what they load: the autoloads, everything the main scene uses, and the tests with everything those use. A script that neither the main scene nor a test touches is not checked by anything; give it a test, or run the scene that uses it for one frame with `"%GODOT%" --headless --path game res://test/x.tscn --quit`.
+
+To parse-check one script: `"%GODOT%" --headless --path game --check-only -s res://graybox/graybox.gd`. That only works for a script that reaches no autoload. `--check-only` compiles the script before the autoloads are registered, so a script that uses `EventBus`, `GameState`, `WorldState` or `SaveSystem`, directly or through a class that does (`Palette` reads `WorldState`), prints `SCRIPT ERROR: Compile Error: Identifier not found: EventBus` although nothing is wrong with it. Check those scripts with `--quit` and `tools\test.cmd` instead.
 
 ### GUT in the editor
 
-The plugin is enabled in `project.godot`, so the GUT panel sits in the bottom dock. The panel keeps its own settings outside the repository (`user://gut_temp_directory/`), so once per machine open the panel, go to Settings, add `res://test/unit` to the directories and tick include subdirectories. The command line and `tools\test.cmd` use `.gutconfig.json` in this folder, which already points there.
+The plugin is enabled in `project.godot`, so the GUT panel sits in the bottom dock. The panel keeps its settings outside the repository, in `user://gut_temp_directory/gut_editor_config.json`, and runs nothing until that file names a test directory. Once per machine, after the first import (`--import`, or opening the editor once) and with the editor closed, run from the repo root:
+
+```
+tools\gut_panel_setup.cmd
+```
+
+It adds `res://test/unit` (subdirectories included) to the panel's settings through GUT's own config class and leaves every other setting alone; running it again changes nothing. The same can be done by hand in the panel under Settings, Test Directories. The command line and `tools\test.cmd` do not need it: they read `.gutconfig.json` in this folder, which already points there.
 
 ## Regenerate the palette
 
@@ -67,11 +78,11 @@ Empty folders hold a `.gdkeep` so git keeps them.
 - `WorldState`: `enum State { DAY, FOG }` and `state`; assigning a new value emits `EventBus.world_state_changed`.
 - `SaveSystem`: `save()` and `load()` return `false` until J19.
 
-Autoload scripts carry no `class_name` (it would hide the singleton); every other script has one.
+Autoload scripts carry no `class_name` (it would hide the singleton), and neither do GUT test scripts (`test_*.gd`; GUT finds them by file name). Every other script under `game/`, outside `addons/`, has one.
 
 ## Graybox kit (`graybox/`)
 
-Colours never appear inline in scripts: use `Palette.DAY`, `Palette.FOG` or `Palette.role(name, state)`. The kit materials are `.tres` files that carry a palette value because resources cannot read a script constant; their roles are:
+Colours never appear inline in scripts: use `Palette.DAY`, `Palette.FOG` or `Palette.role(name, state)`. An accent exists in one state only, and `Palette.role` returns it from that state whichever one is asked for, so `Palette.role(&"ember", WorldState.state)` works by day too. The kit materials are `.tres` files that carry a palette value because resources cannot read a script constant; their roles are:
 
 | Material | Palette role | Use |
 |----------|--------------|-----|
@@ -90,7 +101,7 @@ Scripts reach them as `Graybox.MAT_GRAY`, `Graybox.MAT_FROST` and so on.
 - `box_prop.tscn` / `BoxProp`: `StaticBody3D` on layer 1 (world) with a box mesh and matching collision; `size` sets both; origin at the bottom centre.
 - `ground_plane.tscn`: 60 × 60 m plane with collision, top surface at y = 0.
 
-Both actor and prop scripts are `@tool`, so size changes show in the editor.
+Both actor and prop scripts are `@tool`, so size changes show in the editor. Each node takes its own copy of its mesh and collision shape when it becomes ready, so instances and duplicates (`Node.duplicate()`, Duplicate in the editor) can be resized and retinted one by one.
 
 ## Collision layers
 
@@ -102,4 +113,4 @@ Both actor and prop scripts are `@tool`, so size changes show in the editor.
 
 ## Conventions
 
-See `../plan/README.md`, Conventions. In short: `snake_case` files, `PascalCase` classes, past-tense signals, no magic numbers (tune through `@export` or `.tres`), composition over inheritance, one test scene per job under `test/`.
+See `../plan/README.md`, Conventions. In short: static typing everywhere (`project.godot` makes an untyped declaration a compile error; write `Variant` where anything goes), `snake_case` files, `PascalCase` classes, past-tense signals, no magic numbers (tune through `@export` or `.tres`), composition over inheritance, one test scene per job under `test/`.

@@ -59,14 +59,17 @@ $out += '}'
 $out += ''
 $out += ''
 $out += '## The colour of role [param name] in [param state] (a WorldState.State value).'
-$out += '## Falls back to DAY when the role only exists there (the day accents), and to'
-$out += '## MISSING, with an error, when it exists in neither.'
+$out += '## The accents are not paired: a role that only one state has is returned from that'
+$out += '## state whichever one is asked for, so the fog accents can be read while it is day.'
+$out += '## A role that neither state has returns MISSING and pushes an error.'
 $out += 'static func role(name: StringName, state: int) -> Color:'
-$out += "`tvar table: Dictionary = FOG if state == WorldState.State.FOG else DAY"
+$out += "`tvar in_fog: bool = state == WorldState.State.FOG"
+$out += "`tvar table: Dictionary = FOG if in_fog else DAY"
 $out += "`tif table.has(name):"
 $out += "`t`treturn table[name]"
-$out += "`tif DAY.has(name):"
-$out += "`t`treturn DAY[name]"
+$out += "`tvar other: Dictionary = DAY if in_fog else FOG"
+$out += "`tif other.has(name):"
+$out += "`t`treturn other[name]"
 $out += "`tpush_error(`"Palette: unknown role '%s'`" % name)"
 $out += "`treturn MISSING"
 
