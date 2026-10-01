@@ -27,6 +27,8 @@ extends Node3D
 
 ## Where the camera is right now on its way to [member distance].
 var _current_distance := 0.0
+## The rendered frame [method snap_to_target] was last called in; -1 while it never was.
+var _snap_frame := -1
 
 ## The camera. Its place under the rig is set from the pitch and the distance every frame.
 @onready var camera: Camera3D = $Camera
@@ -42,7 +44,7 @@ func _process(delta: float) -> void:
 	# rate * delta it adds up to the same motion however the time is cut into frames.
 	var weight := 1.0 - exp(-follow_rate * delta)
 	if is_instance_valid(target):
-		global_position = global_position.lerp(target.get_global_transform_interpolated().origin, weight)
+		global_position = global_position.lerp(_get_follow_position(), weight)
 	_current_distance = lerpf(_current_distance, distance, weight)
 	_place_camera()
 
@@ -70,12 +72,25 @@ func zoom(metres: float) -> void:
 
 
 ## Jumps to the target and to the zoom distance without gliding: for the start of a scene
-## and for teleports.
+## and for teleports. The jump holds for the rest of the rendered frame it is called in,
+## wherever in that frame the call comes from.
 func snap_to_target() -> void:
 	if is_instance_valid(target):
 		global_position = target.global_position
 	_current_distance = distance
+	_snap_frame = Engine.get_process_frames()
 	_place_camera()
+
+
+## Where the rig is headed: the position its target is drawn at. What the engine hands out
+## for that during a rendered frame was worked out when the frame began. After a teleport
+## made within the frame it is still the old place, although the frame will draw the target
+## at the new one, and easing toward it would pull the rig back off the target it was just
+## put on. For the rest of the frame of a snap the rig heads for the target's own position.
+func _get_follow_position() -> Vector3:
+	if Engine.get_process_frames() == _snap_frame:
+		return target.global_position
+	return target.get_global_transform_interpolated().origin
 
 
 func _place_camera() -> void:

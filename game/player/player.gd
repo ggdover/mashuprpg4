@@ -93,6 +93,10 @@ var _dodge_cooldown_left := 0.0
 
 func _physics_process(delta: float) -> void:
 	_move_dir = _read_move_dir()
+	if delta <= 0.0:
+		# A tick of no length, which is what Engine.time_scale 0 hands out, moves nothing.
+		# The dash divides by delta and must never see such a tick.
+		return
 	_dodge_cooldown_left = maxf(_dodge_cooldown_left - delta, 0.0)
 	if not is_on_floor():
 		velocity.y -= gravity * delta
@@ -148,6 +152,7 @@ func _walk(delta: float) -> void:
 
 ## One physics step of the dash. The last step may be shorter than a tick; its velocity is
 ## scaled down to match, so the dash covers [member dodge_distance] at any tick rate.
+## [param delta] is above zero: [method _physics_process] sits out a tick of no length.
 func _dash(delta: float) -> void:
 	var step_time := minf(delta, _dodge_time_left)
 	_dodge_time_left -= step_time

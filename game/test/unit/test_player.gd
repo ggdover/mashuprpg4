@@ -20,6 +20,10 @@ const BRAKE_FRAMES := 16
 const MEASURE_FRAMES := 10
 ## Longest wait for a dash, a cooldown, a landing or a way around a pillar, in physics frames.
 const TIMEOUT_FRAMES := 120
+## Physics frames a dash runs for before a test stops the clock under it.
+const DASH_HEAD_FRAMES := 3
+## Physics frames a test keeps the clock stopped for.
+const STOPPED_FRAMES := 5
 const SPEED_TOLERANCE := 0.05
 const DISTANCE_TOLERANCE := 0.05
 const DIRECTION_TOLERANCE := 0.001
@@ -41,6 +45,7 @@ func before_each() -> void:
 func after_each() -> void:
 	for action: StringName in MOVE_ACTIONS:
 		Input.action_release(action)
+	Engine.time_scale = 1.0
 
 
 func test_body_is_built_to_the_spec() -> void:
@@ -236,6 +241,31 @@ func test_dodge_stops_at_a_wall() -> void:
 	assert_true(_player.try_dodge())
 	await _wait_for_dash_end()
 	assert_almost_eq(_player.global_position.x, wall_face - BODY_RADIUS, DISTANCE_TOLERANCE, "the dash ends against the wall, not behind it")
+
+
+func test_a_dash_waits_while_time_stands_still_and_then_covers_its_distance() -> void:
+	# Engine.time_scale 0 hands every physics tick a delta of 0, and the dash scales its last
+	# step by a division by delta.
+	_aim_at(_player.global_position + Vector3.RIGHT * 5.0)
+	await get_tree().physics_frame
+	var from := _player.global_position
+	assert_true(_player.try_dodge(), "the dodge starts")
+	await _steps(DASH_HEAD_FRAMES)
+	Engine.time_scale = 0.0
+	# The frame under way keeps the time scale it began with. Its ticks are over once it
+	# reaches its process step, and every tick after that has no length.
+	await get_tree().process_frame
+	var stopped_at := _player.global_position
+	await _steps(STOPPED_FRAMES)
+	assert_true(_player.is_dodging, "the dash is still under way")
+	assert_eq(_player.global_position, stopped_at, "while time stands still, so does the body")
+
+	Engine.time_scale = 1.0
+	await _wait_for_dash_end()
+	var covered := _player.global_position - from
+	assert_almost_eq(covered.x, _player.dodge_distance, DISTANCE_TOLERANCE, "once time runs again the dash covers the rest of its distance")
+	assert_almost_eq(covered.z, 0.0, DISTANCE_TOLERANCE)
+	assert_false(_player.is_invulnerable, "and ends as any other dash")
 
 
 func test_a_denied_dodge_request_starts_nothing() -> void:

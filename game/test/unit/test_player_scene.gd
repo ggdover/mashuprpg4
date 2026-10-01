@@ -1,7 +1,8 @@
 extends GutTest
 ## The J02 test scene as a whole: the player, the camera rig, the arena and the debug overlay
 ## are wired together, W goes up the screen, the player turns to the mouse, the rig follows
-## what is drawn, and holding skill_1 stands in for the attack slowdown.
+## what is drawn and stays on a player that is teleported, and holding skill_1 stands in for
+## the attack slowdown.
 ##
 ## The scene runs in a viewport of its own. That gives the tests a mouse they can place and a
 ## camera nothing competes for, in a window as well as headless.
@@ -24,6 +25,13 @@ const FOLLOW_FRAMES := 20
 const FRAME_RATES: Array[int] = [30, 60, 144]
 ## The one among them that is no multiple or divisor of the 60 physics ticks per second.
 const UNEVEN_FPS := 144
+## How far the teleport tests move the player, from the spawn to a free spot of the arena
+## and back: far enough for a rig that eases any part of the way to show.
+const TELEPORT := Vector3(9.0, 0.0, -12.0)
+## Rendered frames the rig is watched for after a teleport.
+const TELEPORT_FRAMES := 4
+## Furthest the rig may stand from a player it was snapped to, in metres.
+const ON_TARGET := 0.001
 
 var _viewport: SubViewport
 var _scene: Node3D
@@ -144,10 +152,21 @@ func test_the_rig_follows_the_drawn_player_at_every_frame_rate() -> void:
 		sampler.set_process(false)
 		assert_lt(sampler.largest_miss, 0.0005, "at %d fps the rig closed, every frame, on where the player was drawn" % fps)
 		if fps == UNEVEN_FPS and DisplayServer.get_name() == "headless":
-			# Only a headless run is sure to get the frame rate it asked for; a window may be
-			# held to the monitor, and frames in step with the ticks cannot tell the two apart.
+			# Only a headless run is free of the monitor: a window may be held to its refresh
+			# rate, and frames in step with the ticks cannot tell the two apart.
 			assert_gt(sampler.largest_tick_miss, 0.002, "which at %d fps is not where the last physics tick left it" % fps)
 	Engine.max_fps = max_fps
+
+
+func test_a_teleport_before_the_rig_has_had_its_frame_leaves_no_glide() -> void:
+	# A coroutine that process_frame resumes runs ahead of every _process of that frame, the
+	# rig's included. The engine has worked out where the player is drawn by then, and after
+	# a jump that is still the old place: a rig that eased toward it would be pulled back.
+	await _assert_a_teleport_leaves_no_glide(get_tree().process_frame)
+
+
+func test_a_teleport_in_a_physics_tick_leaves_no_glide() -> void:
+	await _assert_a_teleport_leaves_no_glide(get_tree().physics_frame)
 
 
 ## Puts the mouse over [param point] on the ground, the way a player would point at it.
@@ -156,6 +175,36 @@ func _point_mouse_at(point: Vector3) -> void:
 	motion.position = _rig.camera.unproject_position(point)
 	motion.global_position = motion.position
 	_viewport.push_input(motion, true)
+
+
+## Teleports the player the way J12's zone change and J20's respawn will, as soon as
+## [param resumed_by] fires, once at each frame rate: move it, reset its interpolation, snap
+## the rig. Asserts that the rig stands on the player from that very frame on.
+func _assert_a_teleport_leaves_no_glide(resumed_by: Signal) -> void:
+	var max_fps := Engine.max_fps
+	var jump := TELEPORT
+	for fps: int in FRAME_RATES:
+		Engine.max_fps = fps
+		# Two frames for the new cap to set the length of a frame.
+		await wait_process_frames(2)
+		await resumed_by
+		var frame := Engine.get_process_frames()
+		_player.global_position += jump
+		_player.reset_physics_interpolation()
+		_rig.snap_to_target()
+		var sampler := StraySampler.new()
+		sampler.rig = _rig
+		sampler.target = _player
+		sampler.process_priority = _rig.process_priority + 1
+		add_child_autofree(sampler)
+		for i: int in TELEPORT_FRAMES:
+			await get_tree().process_frame
+		sampler.set_process(false)
+		assert_eq(sampler.first_frame, frame, "at %d fps the rig had yet to move in the frame of the teleport" % fps)
+		assert_lt(sampler.largest, ON_TARGET, "at %d fps it stood on the player from that frame on" % fps)
+		# There, back and there again.
+		jump = -jump
+	Engine.max_fps = max_fps
 
 
 ## Runs right after the rig every rendered frame and works out where the rig should have
@@ -181,4 +230,24 @@ class FollowSampler:
 			largest_miss = maxf(largest_miss, rig.global_position.distance_to(drawn))
 			largest_tick_miss = maxf(largest_tick_miss, rig.global_position.distance_to(ticked))
 		_rig_before = rig.global_position
+		frames += 1
+
+
+## Runs right after the rig every rendered frame and keeps how far the rig stood from its
+## target's own position, the place a teleport and a snap put both on.
+class StraySampler:
+	extends Node
+
+	var rig: CameraRig
+	var target: Node3D
+	var frames := 0
+	## The rendered frame the first sample was taken in.
+	var first_frame := -1
+	## Furthest the rig stood from its target, in metres.
+	var largest := 0.0
+
+	func _process(_delta: float) -> void:
+		if frames == 0:
+			first_frame = Engine.get_process_frames()
+		largest = maxf(largest, rig.global_position.distance_to(target.global_position))
 		frames += 1
