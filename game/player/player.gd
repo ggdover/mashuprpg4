@@ -37,8 +37,10 @@ const ALIGNED := 0.9999
 @export var dodge_cooldown := 0.8
 
 @export_group("Corners")
-## Sideways step in metres that takes the body off a corner it has met dead centre.
-@export var corner_step := 0.05
+## Sideways step in metres that takes the body off a corner it has met dead centre. The same
+## distance to the side is where it looks whether the surface is a corner at all; much under
+## a centimetre a corner looks as flat as a wall.
+@export_range(0.01, 0.2, 0.01) var corner_step := 0.05
 
 @export_group("Camera")
 ## The rig whose yaw the move keys are relative to, so that W is up on screen. Without a rig
