@@ -1,0 +1,60 @@
+{
+  "name": "mashuprpg4 forest palette",
+  "version": 1,
+  "source": "Sampled from ref_imgs/act1_daytime and ref_imgs/act1_foggy (k-means over ~1.5M pixels per state plus small-region averages), then hand-tuned. 2026-09-30.",
+  "states": {
+    "day": {
+      "title": "Day",
+      "swedish": "Dagsljus",
+      "description": "Sunlit Swedish pine forest. Warm olive-gold ground, orange pine bark, one cool colour: the sky."
+    },
+    "fog": {
+      "title": "Fog",
+      "swedish": "Dimma",
+      "description": "The same forest with the other world showing through. One cold blue-slate ramp, near-black shadows, and a few saturated accents that are the only colour left."
+    }
+  },
+  "ramp": [
+    { "role": "deepest", "day": "#15130A", "fog": "#0C0D0B", "use": "Deepest shadow: under boulders, tree hollows, cave mouths. Outlines." },
+    { "role": "shadow",  "day": "#2A2612", "fog": "#1F211B", "use": "Shadow side of everything. Default dark for UI panels." },
+    { "role": "dark",    "day": "#463F27", "fog": "#3A3E3D", "use": "Shaded mid-tones: bark in shade, wet ground, dark cloth." },
+    { "role": "mid",     "day": "#7A7048", "fog": "#626C7A", "use": "Neutral mid-tone. Undyed wool, weathered wood, plain stone." },
+    { "role": "light",   "day": "#BFAF7E", "fog": "#99A4B3", "use": "Lit surfaces without a strong hue of their own." },
+    { "role": "bright",  "day": "#EDEAE0", "fog": "#C9D0D8", "use": "Highest highlight. Day: cloud, lichen glare, sun on stone. Fog: the fog ceiling, rime." }
+  ],
+  "environment": [
+    { "role": "canopy",    "day": "#2F3D1F", "fog": "#22271A", "use": "Needle mass of pine and spruce in shade; distant treeline." },
+    { "role": "moss",      "day": "#5C6A36", "fog": "#3E4430", "use": "Forest-floor moss, ferns, blueberry leaves. The default green." },
+    { "role": "moss-lit",  "day": "#AEB055", "fog": "#6E7558", "use": "Moss where light hits it. Day: the yellow-green that sells sunshine. Fog: dew-grey." },
+    { "role": "bark",      "day": "#8A6A4C", "fog": "#58493A", "use": "Trunks at eye height; wooden buildings, fences, signposts." },
+    { "role": "granite",   "day": "#7D7F79", "fog": "#5A6267", "use": "Boulders, runestones, cliff faces, the mountain (berget)." },
+    { "role": "lichen",    "day": "#C9D0CE", "fog": "#A9B8C4", "use": "Pale lichen crust on rock. In fog this is rime and frost." },
+    { "role": "soil",      "day": "#A9835A", "fog": "#494B45", "use": "Paths, needle litter, roots, exposed earth." },
+    { "role": "sky",       "day": "#92B8E3", "fog": "#7B8696", "use": "Clear sky. Day horizon lightens to #B5D2EE. Fog dusk shifts to violet #6F6A85." },
+    { "role": "water",     "day": "#5D8DBE", "fog": "#46525F", "use": "The lake (sjön), tarns, bog pools." },
+    { "role": "lingon",    "day": "#B92A2F", "fog": "#7A3A34", "use": "Lingonberries. Also blood, madder-dyed cloth, and danger." },
+    { "role": "blueberry", "day": "#566A91", "fog": "#4F5C80", "use": "Blueberries with their pale bloom; woad-dyed cloth; cold shadow tint." },
+    { "role": "heather",   "day": "#B487A8", "fog": "#6B5B7A", "use": "Ljung in bloom on rock slabs and bog edges." }
+  ],
+  "accents": {
+    "day": [
+      { "role": "sun",      "hex": "#E6C878", "use": "Golden sunlight: beams, rim light, hearth glow. Primary highlight for interactables and UI." },
+      { "role": "sun-core", "hex": "#FCF4DF", "use": "Sun disc, lens flare, the hottest point of any light." },
+      { "role": "tallbark", "hex": "#C98B56", "use": "Orange upper bark of Scots pine. Warm secondary accent; wood in firelight." }
+    ],
+    "fog": [
+      { "role": "spirit", "hex": "#C2DAE8", "use": "Translucent spirit bodies, active runes, the cold light of the fog state. UI highlight in fog." },
+      { "role": "wisp",   "hex": "#EAF5FC", "use": "Wisp cores, spirit eyes, hottest highlight in fog." },
+      { "role": "rune",   "hex": "#7E4F31", "use": "Rust-ochre carvings in stone, old iron, dried blood." },
+      { "role": "ember",  "hex": "#E39A4C", "use": "Lantern, cairn fire, torch. The only warm light in fog: reserve it for safety and for light the player or the village made." },
+      { "role": "dusk",   "hex": "#D4A78E", "use": "Peach band at the horizon when the fog rolls in at sunset." }
+    ]
+  },
+  "ui": [
+    { "signal": "text",      "day": "#EDEAE0", "fog": "#C9D0D8", "note": "ramp.bright of each state" },
+    { "signal": "panel",     "day": "#2A2612", "fog": "#1F211B", "note": "ramp.shadow of each state, at about 85% opacity" },
+    { "signal": "highlight", "day": "#E6C878", "fog": "#C2DAE8", "note": "sun in day, spirit in fog: interact prompts, selected item, quest marker" },
+    { "signal": "health",    "day": "#B92A2F", "fog": "#B92A2F", "note": "day lingon in both states so it stays readable; one of two saturation exceptions in fog" },
+    { "signal": "stamina",   "day": "#AEB055", "fog": "#AEB055", "note": "day moss-lit in both states; the other saturation exception" }
+  ]
+}
