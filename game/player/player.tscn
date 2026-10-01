@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://cjattjpo2lg4j"]
+
+[ext_resource type="Script" uid="uid://cn7uirs35tig7" path="res://player/player.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="2_actor"]
+[ext_resource type="Script" uid="uid://6813kx1ylw0s" path="res://player/aim.gd" id="3_aim"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.4
+height = 1.8
+
+[node name="Player" type="CharacterBody3D"]
+collision_layer = 2
+script = ExtResource("1_script")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Visual" parent="." instance=ExtResource("2_actor")]
+size_class = 0
+
+[node name="Aim" type="Node" parent="."]
+process_physics_priority = -1
+script = ExtResource("3_aim")

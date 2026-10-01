@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="mashuprpg4"
-run/main_scene="res://test/arena.tscn"
+run/main_scene="res://test/test_player.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]

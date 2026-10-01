@@ -1,8 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://bb18uu10fx5vg"]
+[gd_scene load_steps=4 format=3 uid="uid://bb18uu10fx5vg"]
 
 [ext_resource type="PackedScene" uid="uid://bwpbcw8jq5wy1" path="res://graybox/ground_plane.tscn" id="1_ground"]
 [ext_resource type="PackedScene" uid="uid://bb0lo6x3jp10k" path="res://graybox/box_prop.tscn" id="2_prop"]
-[ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="3_actor"]
 
 [sub_resource type="Environment" id="Environment_day"]
 background_mode = 1
@@ -64,32 +63,6 @@ size = Vector3(1, 3, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
 size = Vector3(1, 3, 1)
 
-[node name="Actors" type="Node3D" parent="."]
-
-[node name="Player" parent="Actors" instance=ExtResource("3_actor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -11)
-size_class = 0
-
-[node name="Small" parent="Actors" instance=ExtResource("3_actor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0, -11)
-size_class = 1
-
-[node name="Medium" parent="Actors" instance=ExtResource("3_actor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -11)
-size_class = 2
-
-[node name="Large" parent="Actors" instance=ExtResource("3_actor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, -11)
-size_class = 3
-
-[node name="Boss" parent="Actors" instance=ExtResource("3_actor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -11)
-size_class = 4
-
-[node name="Troll" parent="Actors" instance=ExtResource("3_actor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -11)
-size_class = 5
-
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
 light_color = Color(0.901961, 0.784314, 0.470588, 1)
@@ -99,7 +72,3 @@ shadow_enabled = true
 environment = SubResource("Environment_day")
 
 [node name="PlayerSpawn" type="Marker3D" parent="."]
-
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.573576, 0.819152, 0, -0.819152, 0.573576, 0, 18, 12.6)
-current = true

@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://b73i4v572qbf4"]
+
+[ext_resource type="Script" uid="uid://dxvptmit3l1v7" path="res://player/camera_rig.gd" id="1_script"]
+
+[node name="CameraRig" type="Node3D"]
+physics_interpolation_mode = 2
+script = ExtResource("1_script")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.573576, 0.819152, 0, -0.819152, 0.573576, 0, 14.7447, 10.3244)
+current = true
+fov = 40.0

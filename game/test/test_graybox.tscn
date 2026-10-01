@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://dmyv5fbexfb6i"]
+
+[ext_resource type="PackedScene" uid="uid://bb18uu10fx5vg" path="res://test/arena.tscn" id="1_arena"]
+[ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="2_actor"]
+
+[node name="TestGraybox" type="Node3D"]
+
+[node name="Arena" parent="." instance=ExtResource("1_arena")]
+
+[node name="SizeClasses" type="Node3D" parent="."]
+
+[node name="Player" parent="SizeClasses" instance=ExtResource("2_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -11)
+size_class = 0
+
+[node name="Small" parent="SizeClasses" instance=ExtResource("2_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0, -11)
+size_class = 1
+
+[node name="Medium" parent="SizeClasses" instance=ExtResource("2_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -11)
+size_class = 2
+
+[node name="Large" parent="SizeClasses" instance=ExtResource("2_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, -11)
+size_class = 3
+
+[node name="Boss" parent="SizeClasses" instance=ExtResource("2_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -11)
+size_class = 4
+
+[node name="Troll" parent="SizeClasses" instance=ExtResource("2_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -11)
+size_class = 5
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.573576, 0.819152, 0, -0.819152, 0.573576, 0, 18, 12.6)
+current = true
