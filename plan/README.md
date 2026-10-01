@@ -125,3 +125,20 @@ Then J17 and J19 join the lanes, and J21 and J22 close.
 ## Recommended solo order
 
 J01, J02, J03, J04, J07, J08, J06, J05, J10, J18, J11, J12, J13, J14, J09, J15, J16, J17, J19, J20, J21, J22. This gets to a fight fast and leaves polish for last.
+
+## Godot from the command line
+
+The download was extracted into a folder that carries the executable's name, so the real path is
+`C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe`. Use the `_console` build for scripts; it writes output to the terminal. The sibling `Godot_v4.7.2-stable_win64.exe` is the same engine without a console.
+
+From the repo root, with `GODOT` set to that path:
+
+```
+"%GODOT%" --path game --editor                                   open the editor
+"%GODOT%" --headless --path game --import                        import resources and exit (first run, or after adding files)
+"%GODOT%" --headless --path game --quit                          run the main scene for one frame; script errors print here
+"%GODOT%" --headless --path game --check-only -s res://x.gd      parse-check one script
+"%GODOT%" --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://test/unit -gexit    run GUT tests
+```
+
+An agent cannot see the editor. "Editor loads clean" in a job's acceptance criteria is checked headless: `--import` then `--quit` must print no lines containing `ERROR`, `SCRIPT ERROR` or `Parse Error`.
