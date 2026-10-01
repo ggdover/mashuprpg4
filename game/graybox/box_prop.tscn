@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://bb0lo6x3jp10k"]
+
+[ext_resource type="Script" path="res://graybox/box_prop.gd" id="1_script"]
+[ext_resource type="StandardMaterial3D" uid="uid://b2n461gwoy3el" path="res://graybox/mat_gray.tres" id="2_gray"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_prop"]
+resource_local_to_scene = true
+material = ExtResource("2_gray")
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_prop"]
+resource_local_to_scene = true
+size = Vector3(1, 1, 1)
+
+[node name="BoxProp" type="StaticBody3D"]
+collision_layer = 1
+script = ExtResource("1_script")
+size = Vector3(1, 1, 1)
+material = ExtResource("2_gray")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_prop")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_prop")

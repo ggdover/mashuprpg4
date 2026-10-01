@@ -1,0 +1,105 @@
+[gd_scene load_steps=5 format=3 uid="uid://bb18uu10fx5vg"]
+
+[ext_resource type="PackedScene" uid="uid://bwpbcw8jq5wy1" path="res://graybox/ground_plane.tscn" id="1_ground"]
+[ext_resource type="PackedScene" uid="uid://bb0lo6x3jp10k" path="res://graybox/box_prop.tscn" id="2_prop"]
+[ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="3_actor"]
+
+[sub_resource type="Environment" id="Environment_day"]
+background_mode = 1
+background_color = Color(0.572549, 0.721569, 0.890196, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.572549, 0.721569, 0.890196, 1)
+
+[node name="Arena" type="Node3D"]
+
+[node name="Ground" parent="." instance=ExtResource("1_ground")]
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="WallNorth" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -20)
+size = Vector3(40, 2, 0.5)
+
+[node name="WallSouth" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+size = Vector3(40, 2, 0.5)
+
+[node name="WallEast" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 0)
+size = Vector3(0.5, 2, 40)
+
+[node name="WallWest" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, 0)
+size = Vector3(0.5, 2, 40)
+
+[node name="Pillar1" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -8)
+size = Vector3(1, 3, 1)
+
+[node name="Pillar2" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -8)
+size = Vector3(1, 3, 1)
+
+[node name="Pillar3" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 8)
+size = Vector3(1, 3, 1)
+
+[node name="Pillar4" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 8)
+size = Vector3(1, 3, 1)
+
+[node name="Pillar5" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 0)
+size = Vector3(1, 3, 1)
+
+[node name="Pillar6" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
+size = Vector3(1, 3, 1)
+
+[node name="Pillar7" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -14)
+size = Vector3(1, 3, 1)
+
+[node name="Pillar8" parent="Props" instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+size = Vector3(1, 3, 1)
+
+[node name="Actors" type="Node3D" parent="."]
+
+[node name="Player" parent="Actors" instance=ExtResource("3_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -11)
+size_class = 0
+
+[node name="Small" parent="Actors" instance=ExtResource("3_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0, -11)
+size_class = 1
+
+[node name="Medium" parent="Actors" instance=ExtResource("3_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -11)
+size_class = 2
+
+[node name="Large" parent="Actors" instance=ExtResource("3_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, -11)
+size_class = 3
+
+[node name="Boss" parent="Actors" instance=ExtResource("3_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -11)
+size_class = 4
+
+[node name="Troll" parent="Actors" instance=ExtResource("3_actor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -11)
+size_class = 5
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
+light_color = Color(0.901961, 0.784314, 0.470588, 1)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_day")
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.573576, 0.819152, 0, -0.819152, 0.573576, 0, 18, 12.6)
+current = true

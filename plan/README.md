@@ -30,7 +30,7 @@ A playable act 1 of an action RPG in Godot 4.7, with every asset a gray box. Des
 
 ```
 game/                    Godot project (project.godot lives here)
-  core/                  autoloads: event_bus, game_state, world_state, palette (generated), save_system
+  core/                  autoloads event_bus, game_state, world_state, save_system; palette (generated static class)
   player/                player scene, movement, aim, camera rig
   combat/                health, hitbox, hurtbox, damage_info, status effects, projectiles
   weapons/               weapon_data + .tres per weapon type
@@ -57,6 +57,7 @@ plan/                    this plan and the job files
 - Every job adds or updates a test scene under `game/test/` that demonstrates its feature in isolation.
 - Every job ends with the editor opening the project with zero errors and warnings in the output panel.
 - Colours come from `game/core/palette.gd` (generated from `design/palette.json`), never typed inline.
+- Autoload scripts carry no `class_name` (a class named like its singleton is a GDScript error); every other script has one.
 - Commit per job on a branch named after the job (`job/J04-weapon-skill-framework`), merged to `main` when acceptance criteria pass.
 
 ## Definition of done for a job

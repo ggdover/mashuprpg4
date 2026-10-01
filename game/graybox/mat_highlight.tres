@@ -1,0 +1,5 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b3r0tb07uhkyf"]
+
+[resource]
+resource_name = "mat_highlight"
+albedo_color = Color(0.901961, 0.784314, 0.470588, 1)
