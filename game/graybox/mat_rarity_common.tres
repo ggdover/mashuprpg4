@@ -1,0 +1,5 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cbr5i6aq0fapm"]
+
+[resource]
+resource_name = "mat_rarity_common"
+albedo_color = Color(0.74902, 0.686275, 0.494118, 1)

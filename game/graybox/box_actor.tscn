@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3 uid="uid://crpbhuhon5jsp"]
+
+[ext_resource type="Script" path="res://graybox/box_actor.gd" id="1_script"]
+[ext_resource type="StandardMaterial3D" uid="uid://b2n461gwoy3el" path="res://graybox/mat_gray.tres" id="2_gray"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+resource_local_to_scene = true
+material = ExtResource("2_gray")
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_nose"]
+resource_local_to_scene = true
+material = ExtResource("2_gray")
+size = Vector3(0.25, 0.25, 0.25)
+
+[node name="BoxActor" type="Node3D"]
+script = ExtResource("1_script")
+material = ExtResource("2_gray")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_body")
+
+[node name="Nose" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -0.625)
+mesh = SubResource("BoxMesh_nose")

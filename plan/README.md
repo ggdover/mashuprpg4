@@ -16,7 +16,7 @@ A playable act 1 of an action RPG in Godot 4.7, with every asset a gray box. Des
 | Topic | Decision | Why |
 |-------|----------|-----|
 | Engine | Godot 4.7.2 stable, found at `C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe` | Installed. Pin to 4.7.x |
-| Language | GDScript with static typing, `class_name` on every script | Fastest iteration for a solo project |
+| Language | GDScript with static typing, `class_name` on every script except autoloads and GUT tests | Fastest iteration for a solo project |
 | Dimensions | 3D with a fixed-angle top-down camera | Gray boxes swap cleanly for meshes later; day and fog are lighting and environment presets; the references are 3D |
 | Physics | Jolt (Godot 4.7 default) | Default |
 | Data | Custom `Resource` classes saved as `.tres` under `game/data/` | Designers edit data without touching code; quests, items, enemies, skills are all data |
@@ -30,7 +30,7 @@ A playable act 1 of an action RPG in Godot 4.7, with every asset a gray box. Des
 
 ```
 game/                    Godot project (project.godot lives here)
-  core/                  autoloads: event_bus, game_state, world_state, palette (generated), save_system
+  core/                  autoloads event_bus, game_state, world_state, save_system; palette (generated static class)
   player/                player scene, movement, aim, camera rig
   combat/                health, hitbox, hurtbox, damage_info, status effects, projectiles
   weapons/               weapon_data + .tres per weapon type
@@ -57,6 +57,8 @@ plan/                    this plan and the job files
 - Every job adds or updates a test scene under `game/test/` that demonstrates its feature in isolation.
 - Every job ends with the editor opening the project with zero errors and warnings in the output panel.
 - Colours come from `game/core/palette.gd` (generated from `design/palette.json`), never typed inline.
+- Autoload scripts and GUT test scripts (`test_*.gd`) carry no `class_name`: a class named like its singleton is a GDScript error, and GUT finds tests by file name, so a global class per test file adds nothing. Every other script under `game/`, outside `addons/`, has one.
+- Static typing is enforced: `game/project.godot` makes the `untyped_declaration` warning an error, so a variable, parameter, return value, loop variable or signal parameter without a type (written out, or inferred with `:=`) does not compile. Write `Variant` where anything goes.
 - Commit per job on a branch named after the job (`job/J04-weapon-skill-framework`), merged to `main` when acceptance criteria pass.
 
 ## Definition of done for a job
@@ -137,8 +139,13 @@ From the repo root, with `GODOT` set to that path:
 "%GODOT%" --path game --editor                                   open the editor
 "%GODOT%" --headless --path game --import                        import resources and exit (first run, or after adding files)
 "%GODOT%" --headless --path game --quit                          run the main scene for one frame; script errors print here
-"%GODOT%" --headless --path game --check-only -s res://x.gd      parse-check one script
+"%GODOT%" --headless --path game res://test/x.tscn --quit        run one scene for one frame (a job's test scene)
+"%GODOT%" --headless --path game --check-only -s res://x.gd      parse-check one script that reaches no autoload (see below)
 "%GODOT%" --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://test/unit -gexit    run GUT tests
 ```
 
-An agent cannot see the editor. "Editor loads clean" in a job's acceptance criteria is checked headless: `--import` then `--quit` must print no lines containing `ERROR`, `SCRIPT ERROR` or `Parse Error`.
+An agent cannot see the editor. "Editor loads clean" in a job's acceptance criteria is checked headless: `--import` then `--quit` must print no lines containing `ERROR`, `SCRIPT ERROR` or `Parse Error`. The same goes for the GUT run, and there the lines count, not only the exit code: GUT skips a test script that has a parse error and still exits with 0.
+
+These runs compile only what they load: the autoloads, everything the main scene uses, and the tests with everything those use. A script that neither the main scene nor a test touches is not checked by anything, so give every script a test, or run the scene that uses it.
+
+`--check-only` compiles its script before the autoloads are registered. A script that uses `EventBus`, `GameState`, `WorldState` or `SaveSystem`, directly or through a class that does (`Palette` reads `WorldState`), therefore prints `SCRIPT ERROR: Compile Error: Identifier not found: EventBus` although nothing is wrong with it. Under `--check-only`, and only there, that line is not a job failure. Check such a script with `--quit` and GUT instead.
