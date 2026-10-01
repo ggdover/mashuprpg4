@@ -4,7 +4,7 @@ Updated by the gauntlet merge step after each job. Status is one of: not started
 
 | Job | Status | Branch | Merge commit | Date | Notes |
 |-----|--------|--------|--------------|------|-------|
-| J01 | not started | | | | |
+| J01 | merged | job/J01-project-skeleton | 054877f | 2026-10-01 | Project skeleton, autoloads, palette, graybox kit, GUT (22 tests pass); 3 minor follow-ups in the job file review notes |
 | J02 | not started | | | | |
 | J03 | not started | | | | |
 | J04 | not started | | | | |
