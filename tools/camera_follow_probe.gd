@@ -27,13 +27,20 @@ var _rig: CameraRig
 var _sampler: Sampler
 var _rate_index := 0
 var _elapsed := 0.0
+var _started := false
 var _exit_code := EXIT_OK
 
 
 func _process(delta: float) -> bool:
-	if _sampler == null:
+	if not _started:
+		_started = true
 		_set_up()
 		return false
+	if _sampler == null:
+		# The set-up stopped on an error, which the engine has printed. End the run instead
+		# of leaving a headless Godot behind.
+		quit(EXIT_FAILED)
+		return true
 	_elapsed += delta
 	_sampler.measuring = _elapsed >= SETTLE_SECONDS
 	if _elapsed < SETTLE_SECONDS + MEASURE_SECONDS:
