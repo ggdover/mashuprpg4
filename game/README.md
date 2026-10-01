@@ -12,8 +12,9 @@ From the repo root on Windows:
 | `tools\run.cmd` | Runs the game (main scene `res://test/test_player.tscn`) without the editor. Another scene: `tools\run.cmd res://test/test_graybox.tscn` |
 | `tools\test.cmd` | Runs the GUT unit tests in `res://test/unit` headless; exit code 0 means no test failed |
 | `tools\gut_panel_setup.cmd` | Once per machine: points the GUT panel in the editor at `res://test/unit` (see GUT in the editor) |
+| `tools\camera_follow_probe.cmd` | Measures how steadily the camera follows the walking player at 30, 60 and 144 fps, headless; exit code 0 means steady (see Camera rig) |
 
-All four call `C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe` (the console build, so output lands in the terminal) and pass extra arguments through to Godot.
+All five call `C:\Users\filip\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe` (the console build, so output lands in the terminal) and pass extra arguments through to Godot.
 
 ### Headless checks
 
@@ -140,7 +141,7 @@ Before a dodge starts, the player emits `dodge_requested(request: DodgeRequest)`
 
 The rig's origin is the point the camera looks at. Every rendered frame it closes a share of the gap to its target, `1 - exp(-follow_rate × delta)` with `follow_rate` 8, which adds up to the same motion at any frame rate. At walking speed it trails the player by about 0.7 m. The camera hangs `distance` (18 m) away at `pitch_degrees` (55°) with a 40° field of view and no yaw. The mouse wheel moves `distance` by `zoom_step` (1 m) between `min_distance` (12 m) and `max_distance` (24 m), and the camera eases to it.
 
-The project interpolates physics (`physics/common/physics_interpolation`), so the player is drawn between its physics ticks. The rig is not interpolated (`physics_interpolation_mode` Off in `camera_rig.tscn`); it moves in `_process` and follows `get_global_transform_interpolated()`, the position the player is drawn at. Following `global_position` instead would make the player shake on screen whenever frames and ticks fall out of step. Measured headless with the frame cap at 30, 60 and 144 fps, the distance between the rig and the drawn player varies by less than 0.3 mm while walking.
+The project interpolates physics (`physics/common/physics_interpolation`), so the player is drawn between its physics ticks. The rig is not interpolated (`physics_interpolation_mode` Off in `camera_rig.tscn`); it moves in `_process` and follows `get_global_transform_interpolated()`, the position the player is drawn at. Following `global_position` instead would make the player shake on screen whenever frames and ticks fall out of step. `tools\camera_follow_probe.cmd` measures it: it walks the player through the test scene headless with the frame cap at 30, 60 and 144 fps and prints how much the distance between the rig and the drawn player changes. It stays within about half a millimetre; a rig chasing the physics ticks would vary by 5 mm or more at 144 fps.
 
 When something teleports the player (a zone change, a respawn), call `player.reset_physics_interpolation()` and `camera_rig.snap_to_target()` so that neither draws the jump as a glide.
 

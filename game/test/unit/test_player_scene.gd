@@ -9,10 +9,11 @@ extends GutTest
 const TEST_SCENE: PackedScene = preload("res://test/test_player.tscn")
 const ARENA: PackedScene = preload("res://test/arena.tscn")
 const ACTIONS: Array[StringName] = [&"move_up", &"skill_1"]
-## Canvas size of the viewport the scene runs in: the size of the project window. It is drawn
-## at half that many pixels, so the mouse and the camera count in different units, as they do
-## in a stretched window.
+## Canvas size of the viewport the scene runs in: the size of the project window.
 const VIEW_SIZE := Vector2i(1600, 900)
+## The pixels that canvas is drawn at. Half as many each way, so the mouse and the camera
+## count in different units, as they do in a stretched window.
+const DRAWN_SIZE := Vector2i(800, 450)
 ## Physics frames the player walks for in the walking test.
 const WALK_FRAMES := 30
 ## Physics frames for the body to finish any turn: half a turn takes 10 at the default turn speed.
@@ -33,7 +34,7 @@ var _label: Label
 
 func before_each() -> void:
 	_viewport = SubViewport.new()
-	_viewport.size = VIEW_SIZE / 2
+	_viewport.size = DRAWN_SIZE
 	_viewport.size_2d_override = VIEW_SIZE
 	_viewport.size_2d_override_stretch = true
 	add_child_autofree(_viewport)
