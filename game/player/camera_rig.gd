@@ -34,8 +34,6 @@ var _current_distance := 0.0
 
 func _ready() -> void:
 	distance = clampf(distance, min_distance, max_distance)
-	_current_distance = distance
-	_place_camera()
 	snap_to_target()
 
 

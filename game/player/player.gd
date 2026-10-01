@@ -73,11 +73,6 @@ var _dodge_cooldown_left := 0.0
 @onready var visual: BoxActor = $Visual
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"dodge"):
-		try_dodge()
-
-
 func _physics_process(delta: float) -> void:
 	_move_dir = _read_move_dir()
 	_dodge_cooldown_left = maxf(_dodge_cooldown_left - delta, 0.0)
@@ -91,6 +86,11 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if _is_dodging and is_zero_approx(_dodge_time_left):
 		_end_dodge()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"dodge"):
+		try_dodge()
 
 
 ## Starts a dash if none is running or cooling down and no listener of
