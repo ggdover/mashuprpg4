@@ -85,8 +85,9 @@ func _ready() -> void:
 		sun = DirectionalLight3D.new()
 		sun.name = &"Sun"
 		sun.rotation_degrees = Vector3(-sun_elevation_degrees, sun_heading_degrees, 0.0)
-		sun.shadow_enabled = true
 		add_child(sun)
+	# The sun casts shadows in both looks that have one: hard by day, soft in fog.
+	sun.shadow_enabled = true
 	EventBus.world_state_changed.connect(_on_world_state_changed)
 	# Nothing is on screen yet to tween from: a zone starts in the look of its state.
 	show_state(0.0)

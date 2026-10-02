@@ -189,3 +189,19 @@ func _make_cairn(node_name: StringName, lit: bool) -> Cairn:
 	cairn.lit = lit
 	add_child_autofree(cairn)
 	return cairn
+
+
+func test_a_lit_cairn_is_still_remembered_after_a_trip_through_json() -> void:
+	# J19 saves GameState.zone_state as JSON, which hands every id back as a plain String.
+	GameState.current_zone = &"crossroads"
+	var first := _make_cairn(&"Cairn_1", false)
+	first.light()
+	first.free()
+	var saved := JSON.stringify(GameState.zone_state)
+	GameState.zone_state = JSON.parse_string(saved)
+	assert_true(GameState.has_zone_state(&"crossroads", Cairn.ZONE_STATE_KEY, &"Cairn_1"), "the loaded state answers for the same ids")
+	assert_true(_make_cairn(&"Cairn_1", false).lit, "and the cairn comes back lit")
+	GameState.add_zone_state(&"crossroads", Cairn.ZONE_STATE_KEY, &"Cairn_1")
+	var lists: Dictionary = GameState.zone_state["crossroads"]
+	var remembered: Array = lists["cairns_lit"]
+	assert_eq(remembered.size(), 1, "remembering it again adds no second entry")

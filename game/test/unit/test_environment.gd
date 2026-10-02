@@ -174,6 +174,7 @@ func test_controller_takes_over_the_environment_and_sun_it_is_given() -> void:
 	assert_eq(controller.get_child_count(), 0, "it makes none of its own")
 	assert_not_null(world_environment.environment, "the given WorldEnvironment shows the look")
 	_assert_color(sun.light_color, LIGHT_DAY.color, "and the given sun shines in it")
+	assert_true(sun.shadow_enabled, "with shadows, which a new light does not have")
 	_assert_shows(controller, ENV_DAY, LIGHT_DAY, "by day")
 
 
