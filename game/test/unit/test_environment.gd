@@ -336,3 +336,15 @@ func test_show_state_waits_for_the_controller_to_be_ready() -> void:
 	assert_null(controller.world_environment, "nothing is made or shown before the node is in the tree")
 	add_child_autofree(controller)
 	_assert_shows(controller, ENV_DAY, LIGHT_DAY, "once it is ready")
+
+
+func test_volumetric_fog_fades_in_with_the_fog() -> void:
+	var controller := _make_controller()
+	controller.volumetric_fog = true
+	assert_false(controller.world_environment.environment.volumetric_fog_enabled, "none by day")
+	WorldState.state = WorldState.State.FOG
+	var shown := controller.world_environment.environment
+	assert_true(shown.volumetric_fog_enabled, "it is switched on as the fog starts")
+	assert_almost_eq(shown.volumetric_fog_density, 0.0, TOLERANCE, "with none of it there yet")
+	await wait_seconds(SHORT_TRANSITION + 0.2)
+	assert_almost_eq(shown.volumetric_fog_density, ENV_FOG.volumetric_fog_density, TOLERANCE, "and ends at the preset's density")

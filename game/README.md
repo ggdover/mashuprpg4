@@ -75,8 +75,8 @@ Empty folders hold a `.gdkeep` so git keeps them.
 ## Autoloads
 
 - `EventBus`: every cross-system signal. Add new signals there instead of wiring nodes to each other.
-- `GameState`: `phase`, `flags` with `set_flag` / `has_flag` (emits `EventBus.flag_set` the first time a flag is set), `current_zone`.
-- `WorldState`: `enum State { DAY, FOG }` and `state`; assigning a new value emits `EventBus.world_state_changed`.
+- `GameState`: `phase`, `flags` with `set_flag` / `has_flag` (emits `EventBus.flag_set` the first time a flag is set), `current_zone`, and `zone_state` with `add_zone_state` / `has_zone_state`: what a zone remembers while its scene is not loaded, such as its lit cairns.
+- `WorldState`: `enum State { DAY, FOG }` and `state`; assigning a new value emits `EventBus.world_state_changed`. `request_fog`, `end_fog` and `on_zone_entered` start and end the fog; World state, below, says how.
 - `SaveSystem`: `save()` and `load()` return `false` until J19.
 
 Autoload scripts carry no `class_name` (it would hide the singleton), and neither do GUT test scripts (`test_*.gd`; GUT finds them by file name). Every other script under `game/`, outside `addons/`, has one. A test scene's own script therefore takes another name: `test/test_player.tscn` runs `test/player_test_scene.gd`.
@@ -144,6 +144,60 @@ The rig's origin is the point the camera looks at. Every rendered frame it close
 The project interpolates physics (`physics/common/physics_interpolation`), so the player is drawn between its physics ticks. The rig is not interpolated (`physics_interpolation_mode` Off in `camera_rig.tscn`); it moves in `_process` and follows `get_global_transform_interpolated()`, the position the player is drawn at. Following `global_position` instead would make the player shake on screen whenever frames and ticks fall out of step. `tools\camera_follow_probe.cmd` measures it: it walks the player through the test scene headless at 30, 60 and 144 frames per second and prints how much the distance between the rig and the drawn player changes. It changes by 0.01 mm, where a pixel is about 15 mm of ground at the default zoom; a rig chasing the physics ticks would vary by 3.7 mm at 144 fps. The probe sets each frame rate with Godot's `--fixed-fps`, which gives every frame the same length of game time whatever the machine is doing, so it prints the same figures on every run.
 
 When something teleports the player (a zone change, a respawn), set its position and then call `player.reset_physics_interpolation()` and `camera_rig.snap_to_target()`, so that neither draws the jump as a glide. That works from anywhere in a frame, and when the player walks or dashes on through the teleport the rig follows where it is drawn, as on any other frame. The engine works out what `get_global_transform_interpolated()` returns after a frame's physics ticks and ahead of every `_process`. After a jump made later in the frame it is still the old place, although the frame draws the player at the new one, so for the rest of such a frame the rig follows `global_position`. After a snap made in a physics tick, or ahead of one in an input event, it does not: the engine works out the drawn position after the snap, and `global_position` is up to a tick of travel ahead of that while the player moves.
+
+## World state: day and fog (`core/world_state.gd`, `world/`)
+
+The forest has two states, and everything asks `WorldState` which one it is. `test/test_world_state.tscn` shows the whole system in the arena: `tools\run.cmd res://test/test_world_state.tscn`. F brings the fog and G ends it, P steps the story phase, L toggles the lantern flag, O, V and U walk the player into an open zone, a village and a dungeon, and E lights the cairn the player stands at. The overlay shows what the world state makes of it, and the scene prints the horn until J18 has a toast for it.
+
+| File | Class | What it is |
+|------|-------|------------|
+| `core/world_state.gd` | `WorldState` (autoload) | The state, and what starts and ends the fog |
+| `world/environment_controller.gd` | `EnvironmentController` (`Node`) | One in every zone: shows the day, fog or cave look and tweens between them |
+| `world/environment/` | `Environment`, `LightPreset` | The looks: `env_day`, `env_fog`, `env_cave`, `light_day` and `light_fog` (`.tres`), and `light_preset.gd` |
+| `world/state_visibility.gd` | `StateVisibility` (`Node`) | Child of anything that exists in one state only |
+| `world/signpost.tscn`, `signpost.gd` | `Signpost` (`Node3D`) | A post with a text and a `StateVisibility` of its own |
+| `world/cairn.tscn`, `cairn.gd` | `Cairn` (`Node3D`) | A stone waypoint; once lit, a beacon in fog and a safe point |
+| `player/player_light.gd` | `PlayerLight` (`Node3D`) | The player's ember light, a child of the player |
+
+### What starts and ends the fog
+
+- `WorldState.request_fog(reason)` brings the fog, emits `EventBus.fog_started(reason)` and, outside a dungeon, `EventBus.horn_sounded`. It does nothing in a village and nothing while it is fog already, and returns whether the fog started.
+- `WorldState.end_fog()` brings the day back and emits `EventBus.fog_ended`.
+- `WorldState.on_zone_entered(zone_id, kind)` is what the zone manager (J12) calls once the player stands in a new zone; `kind` is a `WorldState.ZoneKind`. A `VILLAGE` ends the fog. An `OPEN` zone rolls `fog_chance_by_phase` (0, 10 and 25 % in phases 1 to 3) and on success asks for fog with the reason `&"random"`. An entry into a zone whose last entry brought fog that way does not roll, so no zone gets random fog twice in a row. A `DUNGEON` changes nothing. `WorldState.zone_kind` keeps the kind; it is `OPEN` until a zone has been entered.
+- While `WorldState.fog_scene_active` is set (J17 sets it around a scripted scene), entering a zone neither rolls for fog nor ends it. `request_fog` and `end_fog` still do as they are told, so the scene starts and ends its own fog.
+- Assigning `WorldState.state` switches the state with `world_state_changed` alone: no fog signals, no horn. A loaded save and a debug key do that.
+
+### The three looks
+
+| | Day | Fog | Cave |
+|---|-----|-----|------|
+| Background | sky: top day `sky`, horizon `#B5D2EE` | the same sky, covered by the fog | fog `deepest`, no sky |
+| Ambient light | day `light` at 0.5 | fog `mid` at 1 | fog `deepest` at 0.2 |
+| Fog | none | fog `light`, 0 to 45 m, curve 0.8 | fog `shadow`, 18 to 38 m |
+| Directional light | `sun` at 1.2, hard shadows | `spirit` at 0.35, soft shadows | none |
+
+The fog is Godot's depth fog, which is measured from the camera, and the camera hangs 18 m from the player. In the fog look it covers a third of what stands at the bottom of the screen, 43 % of the player and two thirds of what stands at the top; a box 35 m from the camera is 90 % gone and from 45 m on nothing is left. Exponential fog thick enough to hide a box at 50 m would cover three quarters of everything around the player. The cave fog begins at the default camera distance and is complete 20 m further; in a cave it is the player's light that decides what is seen.
+
+The presets hold literal palette values, because a resource cannot read a script constant. `test/unit/test_environment.gd` checks every one against `Palette`, as `test_graybox.gd` does for the kit materials.
+
+`EnvironmentController` owns the zone's `WorldEnvironment` and `DirectionalLight3D`. Point its `world_environment` and `sun` exports at the two a scene has, as the test scene does with the arena's; left empty, it makes its own, with the sun 45° above the horizon. When it becomes ready it shows the look of the state at once. On `world_state_changed` it tweens to the other look over `transition_seconds` (2.5): the fog's colour, density, reach and cover of the sky, the ambient colour and energy, and the sun's colour, energy and shadow softness. A transition that is interrupted goes on from where it stands. `force_cave` shows the cave look in both states and switches the sun off; dungeons set it. `volumetric_fog` (off) adds volumetric fog to the fog and cave looks. The presets are never written to: the `WorldEnvironment` gets a copy. `show_state(seconds)` brings the look up to date by hand.
+
+### Things that exist in one state
+
+`StateVisibility` has two flags, `day` and `fog`. When it becomes ready and at every change of state it sets its parent's `visible` and disables every `CollisionShape3D` under the parent that is not drawn, so what is hidden can be walked through. One node on a group covers the whole group, and a group may hold things with a `StateVisibility` of their own: a shape collides only while everything above it is shown. The shapes switch at the end of the frame. `Signpost` exports `text`, `day` and `fog`; a day and a fog signpost on the same spot read as one post whose sign changes.
+
+### Cairns
+
+A `Cairn` is a stack of three boxes with a fire (an ember `OmniLight3D`) and a beacon, a 10 m box that shows ember whatever light falls on it and whose material takes no fog, so a lit cairn is seen from as far as the camera sees. Both show only while `lit`.
+
+- `lit` (export) is what the cairn shows. `light()` is the event: it lights the cairn, remembers it in `GameState.zone_state` (zone id, then `"cairns_lit"`, then the `cairn_id`, which is the node name unless set) and emits `EventBus.cairn_lit(cairn)`.
+- `interact(tallow_available) -> int` is what E does: it lights an unlit cairn when the tallow covers `tallow_cost` (1) and returns the tallow burnt, which the caller takes out of the inventory. `get_prompt()` and the `InteractArea` (`Area3D` on layer 9) are there for J06's interactor.
+- A remembered cairn comes back lit, when it becomes ready and again when `EventBus.zone_entered` names its zone, without emitting `cairn_lit`.
+- `is_safe_point` is true while lit (J20 respawns there). `WorldState.nearest_lit_cairn(position)` returns the nearest lit cairn in the scene tree, or null (J18's bell).
+
+### Player light
+
+`PlayerLight` hangs 2.5 m above the player's feet in `player.tscn` and makes its own `OmniLight3D` in ember. It is out by day and burns in fog and in a dungeon (`WorldState.zone_kind`), reaching `base_range` (6 m), or `lantern_range` (12 m) once the `has_lantern` flag is set. It reads the state, the kind of zone and the flag every frame, so a loaded save or a debug command needs no signal to reach it.
 
 ## Collision layers
 

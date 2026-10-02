@@ -59,5 +59,9 @@ func get_wanted_range() -> float:
 ## Switches the light on or off and sets its range for the state of the world right now.
 ## Runs every frame; call it to see the result within the frame of a change.
 func refresh() -> void:
-	_light.visible = is_needed()
-	_light.omni_range = get_wanted_range()
+	var needed := is_needed()
+	if _light.visible != needed:
+		_light.visible = needed
+	var wanted_range := get_wanted_range()
+	if not is_equal_approx(_light.omni_range, wanted_range):
+		_light.omni_range = wanted_range

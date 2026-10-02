@@ -97,14 +97,14 @@ func on_zone_entered(zone_id: StringName, kind: ZoneKind) -> void:
 ## [code]null[/code] when none is lit. The bell points at it (J18).
 func nearest_lit_cairn(position: Vector3) -> Cairn:
 	var nearest: Cairn = null
-	var nearest_distance := INF
+	var nearest_distance_squared := INF
 	for node: Node in get_tree().get_nodes_in_group(CAIRN_GROUP):
 		var cairn := node as Cairn
 		if cairn == null or not cairn.lit or cairn.is_queued_for_deletion():
 			continue
-		var distance := cairn.global_position.distance_squared_to(position)
-		if distance < nearest_distance:
-			nearest_distance = distance
+		var distance_squared := cairn.global_position.distance_squared_to(position)
+		if distance_squared < nearest_distance_squared:
+			nearest_distance_squared = distance_squared
 			nearest = cairn
 	return nearest
 
