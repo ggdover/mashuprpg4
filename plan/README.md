@@ -58,6 +58,7 @@ plan/                    this plan and the job files
 - Every job ends with the editor opening the project with zero errors and warnings in the output panel.
 - Colours come from `game/core/palette.gd` (generated from `design/palette.json`), never typed inline.
 - Autoload scripts and GUT test scripts (`test_*.gd`) carry no `class_name`: a class named like its singleton is a GDScript error, and GUT finds tests by file name, so a global class per test file adds nothing. Every other script under `game/`, outside `addons/`, has one.
+- A test scene's own script is not named `test_*.gd`, because that pattern belongs to the GUT tests: `test/test_player.tscn` runs `test/player_test_scene.gd` (`PlayerTestScene`).
 - Static typing is enforced: `game/project.godot` makes the `untyped_declaration` warning an error, so a variable, parameter, return value, loop variable or signal parameter without a type (written out, or inferred with `:=`) does not compile. Write `Variant` where anything goes.
 - Commit per job on a branch named after the job (`job/J04-weapon-skill-framework`), merged to `main` when acceptance criteria pass.
 
@@ -140,6 +141,7 @@ From the repo root, with `GODOT` set to that path:
 "%GODOT%" --headless --path game --import                        import resources and exit (first run, or after adding files)
 "%GODOT%" --headless --path game --quit                          run the main scene for one frame; script errors print here
 "%GODOT%" --headless --path game res://test/x.tscn --quit        run one scene for one frame (a job's test scene)
+"%GODOT%" --headless --path game res://test/x.tscn --quit-after 300   run one scene for 300 frames; --quit stops after the first, before most per-frame code has run
 "%GODOT%" --headless --path game --check-only -s res://x.gd      parse-check one script that reaches no autoload (see below)
 "%GODOT%" --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://test/unit -gexit    run GUT tests
 ```
@@ -149,3 +151,5 @@ An agent cannot see the editor. "Editor loads clean" in a job's acceptance crite
 These runs compile only what they load: the autoloads, everything the main scene uses, and the tests with everything those use. A script that neither the main scene nor a test touches is not checked by anything, so give every script a test, or run the scene that uses it.
 
 `--check-only` compiles its script before the autoloads are registered. A script that uses `EventBus`, `GameState`, `WorldState` or `SaveSystem`, directly or through a class that does (`Palette` reads `WorldState`), therefore prints `SCRIPT ERROR: Compile Error: Identifier not found: EventBus` although nothing is wrong with it. Under `--check-only`, and only there, that line is not a job failure. Check such a script with `--quit` and GUT instead.
+
+A script that Godot runs with `-s` is compiled at that same early moment, together with every class it names, with or without `--check-only`. There the line is a real failure: a class that reaches an autoload does not compile and stays broken for the whole run. A script meant for `-s` therefore names no autoload and no project class. It loads scenes and scripts by path once it runs and uses them through engine types, `get()` and `call()`, the way `tools/gut_panel_setup.gd` and `tools/camera_follow_probe.gd` do.

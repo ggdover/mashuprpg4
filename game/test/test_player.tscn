@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://beabmdfsuf5tp"]
+
+[ext_resource type="Script" uid="uid://0yh00a6d1ffn" path="res://test/player_test_scene.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bb18uu10fx5vg" path="res://test/arena.tscn" id="2_arena"]
+[ext_resource type="PackedScene" uid="uid://cjattjpo2lg4j" path="res://player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://b73i4v572qbf4" path="res://player/camera_rig.tscn" id="4_rig"]
+
+[node name="TestPlayer" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Arena" parent="." instance=ExtResource("2_arena")]
+
+[node name="Player" parent="." node_paths=PackedStringArray("camera_rig") instance=ExtResource("3_player")]
+camera_rig = NodePath("../CameraRig")
+
+[node name="CameraRig" parent="." node_paths=PackedStringArray("target") instance=ExtResource("4_rig")]
+target = NodePath("../Player")
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Overlay"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 17.0
+offset_bottom = 39.0
+theme_override_constants/outline_size = 6
