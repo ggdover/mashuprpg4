@@ -14,7 +14,7 @@ Updated by the gauntlet merge step after each job. Status is one of: not started
 | J08 | not started | | | | |
 | J09 | not started | | | | |
 | J10 | not started | | | | |
-| J11 | not started | | | | |
+| J11 | merged | job/J11-world-state-day-fog | 99d0086 | 2026-10-02 | World state (day, fog, zone entry rolls, request_fog), EnvironmentController with day, fog and cave looks, StateVisibility, signpost, cairns, player light, test_world_state.tscn (GUT 273 tests pass); 8 open minor follow-ups in the job file review notes |
 | J12 | not started | | | | |
 | J13 | not started | | | | |
 | J14 | not started | | | | |
