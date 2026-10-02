@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="QuestData" format=3 uid="uid://cfpvan20wyx71"]
+
+[ext_resource type="Script" uid="uid://bacnppngrcjwt" path="res://quests/objective_data.gd" id="1_objective"]
+[ext_resource type="Script" uid="uid://o6ot141fjdc" path="res://quests/quest_rewards.gd" id="2_rewards"]
+[ext_resource type="Script" uid="uid://dq4c0tfk0bhw3" path="res://quests/quest_data.gd" id="3_quest"]
+
+[sub_resource type="Resource" id="Resource_reach"]
+script = ExtResource("1_objective")
+type = 3
+description = "Walk up to the far stone"
+marker_id = &"test_c_goal"
+
+[sub_resource type="Resource" id="Resource_rewards"]
+script = ExtResource("2_rewards")
+silver = 5
+
+[resource]
+script = ExtResource("3_quest")
+id = &"test_c"
+display_name = "The far stone"
+summary = "What is that stone at the far end of the yard?"
+objectives = Array[ExtResource("1_objective")]([SubResource("Resource_reach")])
+prerequisite_quests = Array[StringName]([&"test_b"])
+rewards = SubResource("Resource_rewards")
+on_complete_scene = &"test_stone_scene"
+repeatable = true
+auto_start_marker = &"test_c_start"

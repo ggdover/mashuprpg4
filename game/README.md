@@ -78,6 +78,7 @@ Empty folders hold a `.gdkeep` so git keeps them.
 - `GameState`: `phase`, `flags` with `set_flag` / `has_flag` (emits `EventBus.flag_set` the first time a flag is set), `current_zone`.
 - `WorldState`: `enum State { DAY, FOG }` and `state`; assigning a new value emits `EventBus.world_state_changed`.
 - `SaveSystem`: `save()` and `load()` return `false` until J19.
+- `QuestManager` (`quests/quest_manager.gd`): loads every quest under `data/quests/`, counts the objectives of the active ones from what the `EventBus` announces, hands out rewards. Other systems call `state_of`, `start`, `try_turn_in`, `available_for_npc` and `turn_ins_for_npc`; the rules are in its class comment. `test/test_quests.tscn` plays the three test quests with the journal (J).
 
 Autoload scripts carry no `class_name` (it would hide the singleton), and neither do GUT test scripts (`test_*.gd`; GUT finds them by file name). Every other script under `game/`, outside `addons/`, has one. A test scene's own script therefore takes another name: `test/test_player.tscn` runs `test/player_test_scene.gd`.
 

@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="QuestData" format=3 uid="uid://db1qpa5oxmypt"]
+
+[ext_resource type="Script" uid="uid://bacnppngrcjwt" path="res://quests/objective_data.gd" id="1_objective"]
+[ext_resource type="Script" uid="uid://o6ot141fjdc" path="res://quests/quest_rewards.gd" id="2_rewards"]
+[ext_resource type="Script" uid="uid://dq4c0tfk0bhw3" path="res://quests/quest_data.gd" id="3_quest"]
+
+[sub_resource type="Resource" id="Resource_collect"]
+script = ExtResource("1_objective")
+type = 2
+description = "Pick up test items"
+target_count = 2
+item_id = &"test_item"
+on_complete_flag = &"b_items_found"
+
+[sub_resource type="Resource" id="Resource_deliver"]
+script = ExtResource("1_objective")
+type = 4
+description = "Bring them to the test NPC"
+target_count = 2
+item_id = &"test_item"
+npc_id = &"test_npc"
+hidden_until_previous = true
+
+[sub_resource type="Resource" id="Resource_rewards"]
+script = ExtResource("2_rewards")
+xp = 80
+silver = 25
+item_ids = Array[StringName]([&"test_token"])
+flags = Array[StringName]([&"b_done"])
+
+[resource]
+script = ExtResource("3_quest")
+id = &"test_b"
+display_name = "Test items for the test NPC"
+summary = "The test NPC wants two test items brought over."
+objectives = Array[ExtResource("1_objective")]([SubResource("Resource_collect"), SubResource("Resource_deliver")])
+giver_npc = &"test_npc"
+turn_in_npc = &"test_npc"
+prerequisite_flags = Array[StringName]([&"a_done"])
+rewards = SubResource("Resource_rewards")

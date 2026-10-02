@@ -1,0 +1,88 @@
+[gd_scene format=3 uid="uid://c2wcuywjov1xs"]
+
+[ext_resource type="Script" uid="uid://cjg5e7g6vswp" path="res://test/quest_test_scene.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bb18uu10fx5vg" path="res://test/arena.tscn" id="2_arena"]
+[ext_resource type="PackedScene" uid="uid://cjattjpo2lg4j" path="res://player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://b73i4v572qbf4" path="res://player/camera_rig.tscn" id="4_rig"]
+[ext_resource type="PackedScene" uid="uid://bawllxhpseeqq" path="res://test/quests/quest_test_npc.tscn" id="5_npc"]
+[ext_resource type="PackedScene" uid="uid://0p64bw2067cw" path="res://test/quests/quest_test_dummy.tscn" id="6_dummy"]
+[ext_resource type="PackedScene" uid="uid://cpees2t5w8n4j" path="res://test/quests/quest_test_pickup.tscn" id="7_pickup"]
+[ext_resource type="PackedScene" uid="uid://btlkm43mo0vpj" path="res://quests/quest_trigger.tscn" id="8_trigger"]
+[ext_resource type="PackedScene" uid="uid://bb0lo6x3jp10k" path="res://graybox/box_prop.tscn" id="9_prop"]
+[ext_resource type="PackedScene" uid="uid://7ucqltqjcj87" path="res://ui/journal/journal.tscn" id="10_journal"]
+
+[node name="TestQuests" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Arena" parent="." instance=ExtResource("2_arena")]
+
+[node name="Player" parent="." node_paths=PackedStringArray("camera_rig") instance=ExtResource("3_player")]
+camera_rig = NodePath("../CameraRig")
+
+[node name="CameraRig" parent="." node_paths=PackedStringArray("target") instance=ExtResource("4_rig")]
+target = NodePath("../Player")
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="TestNpc" parent="Props" instance=ExtResource("5_npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -5)
+
+[node name="Dummy1" parent="Props" instance=ExtResource("6_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -2)
+
+[node name="Dummy2" parent="Props" instance=ExtResource("6_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 0)
+
+[node name="Dummy3" parent="Props" instance=ExtResource("6_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2)
+
+[node name="OtherDummy" parent="Props" instance=ExtResource("6_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 3.5)
+enemy_id = &"other_dummy"
+label_text = "Other dummy (does not count)"
+
+[node name="Item1" parent="Props" instance=ExtResource("7_pickup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -2)
+
+[node name="Item2" parent="Props" instance=ExtResource("7_pickup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0, 0)
+
+[node name="Item3" parent="Props" instance=ExtResource("7_pickup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 2)
+
+[node name="Triggers" type="Node3D" parent="."]
+
+[node name="Path" parent="Triggers" instance=ExtResource("8_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+marker_id = &"test_c_start"
+size = Vector3(8, 2, 2)
+
+[node name="Label" type="Label3D" parent="Triggers/Path"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+billboard = 1
+text = "Path south (quest C starts here)"
+
+[node name="Goal" parent="Triggers" instance=ExtResource("8_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 11)
+marker_id = &"test_c_goal"
+size = Vector3(5, 2, 5)
+
+[node name="Label" type="Label3D" parent="Triggers/Goal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+billboard = 1
+text = "The far stone"
+
+[node name="Stone" parent="Triggers" instance=ExtResource("9_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 11)
+size = Vector3(1, 1.5, 1)
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Overlay"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 17.0
+offset_bottom = 39.0
+theme_override_constants/outline_size = 6
+
+[node name="Journal" parent="Overlay" instance=ExtResource("10_journal")]

@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://btlkm43mo0vpj"]
+
+[ext_resource type="Script" uid="uid://syo5uaj15t12" path="res://quests/quest_trigger.gd" id="1_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_trigger"]
+resource_local_to_scene = true
+size = Vector3(2, 2, 2)
+
+[node name="QuestTrigger" type="Area3D"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("1_script")
+
+[node name="Shape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("BoxShape3D_trigger")

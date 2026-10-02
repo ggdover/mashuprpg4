@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://bawllxhpseeqq"]
+
+[ext_resource type="Script" uid="uid://cs4y6hulr368d" path="res://test/quests/quest_test_npc.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="2_actor"]
+[ext_resource type="StandardMaterial3D" uid="uid://b3r0tb07uhkyf" path="res://graybox/mat_highlight.tres" id="3_highlight"]
+
+[node name="QuestTestNpc" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Visual" parent="." instance=ExtResource("2_actor")]
+size_class = 0
+material = ExtResource("3_highlight")
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
+billboard = 1
+text = "Test NPC"
