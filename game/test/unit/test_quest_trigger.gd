@@ -6,7 +6,7 @@ const TRIGGER: PackedScene = preload("res://quests/quest_trigger.tscn")
 const PLAYER: PackedScene = preload("res://player/player.tscn")
 const GROUND: PackedScene = preload("res://graybox/ground_plane.tscn")
 const MARKER := &"test_oak"
-## Physics frames a trigger gets to notice that a body came or went.
+## Physics frames a trigger gets to notice that a body came or went. It takes two.
 const NOTICE_FRAMES := 4
 ## A spot on the ground well outside every trigger of these tests.
 const AWAY := Vector3(20.0, 0.0, 20.0)

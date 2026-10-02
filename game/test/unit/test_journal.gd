@@ -52,6 +52,15 @@ func test_it_has_an_active_and_a_completed_tab() -> void:
 	assert_eq(_completed_lines(), PackedStringArray([Journal.TEXT_NO_COMPLETED]))
 
 
+func test_the_panel_leaves_the_middle_of_the_screen_free() -> void:
+	_journal.open()
+	await wait_process_frames(2)
+	var panel: Control = _journal.get_node("%Panel")
+	var rect := panel.get_global_rect()
+	assert_true(Rect2(Vector2.ZERO, Vector2(VIEW_SIZE)).encloses(rect), "the panel is on screen")
+	assert_false(rect.has_point(Vector2(VIEW_SIZE) * 0.5), "and not over the player, who stands in the middle of it")
+
+
 func test_a_given_quest_is_listed_under_its_name_with_summary_and_counts() -> void:
 	var foxes := _kill_objective("Kill possessed foxes", 5)
 	var quest := _add_quest([foxes, _kill_objective("Kill ravens", 12)])

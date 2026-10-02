@@ -3,13 +3,13 @@ extends GutTest
 ## stand-in props and the two quest triggers, with the journal read after every step.
 ##
 ## The scene runs in a viewport of its own, so the key presses the tests send reach the
-## scene and nothing else. The player is put next to things instead of walked there; the
-## triggers still fire from real physics.
+## scene and nothing else. The player is put next to things instead of walked there, except
+## in the one test that walks; the triggers fire from real physics either way.
 
 const TEST_SCENE: PackedScene = preload("res://test/test_quests.tscn")
 ## Canvas size of the viewport the scene runs in: the size of the project window.
 const VIEW_SIZE := Vector2i(1600, 900)
-## Physics frames a trigger gets to notice that the player came.
+## Physics frames a trigger gets to notice that the player came or went. It takes two.
 const TRIGGER_FRAMES := 4
 ## Where the player is put inside the far stone's trigger: beside the stone, not in it.
 const BESIDE := Vector3(1.5, 0.0, 0.0)
@@ -237,11 +237,12 @@ func _press(action: StringName) -> void:
 		_viewport.push_input(event)
 
 
-## Puts the player on the prop at [param path], lets a physics frame pass, as walking there
-## would, so that a trigger the player stood in sees it leave, and presses E.
+## Puts the player on the prop at [param path] and presses E. Time passes in between, as it
+## would on a walk there, so that a trigger the player stood in sees it leave.
 func _interact_with(path: String) -> void:
 	_put_player_at((_scene.get_node(path) as Node3D).global_position)
-	await get_tree().physics_frame
+	for i: int in TRIGGER_FRAMES:
+		await get_tree().physics_frame
 	_press(&"interact")
 
 
