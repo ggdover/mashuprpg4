@@ -1,0 +1,19 @@
+[gd_resource type="Environment" format=3 uid="uid://bn0x4ftws2w75"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_dsodk"]
+sky_top_color = Color(0.57254905, 0.72156864, 0.8901961, 1)
+sky_horizon_color = Color(0.70980394, 0.8235294, 0.93333334, 1)
+ground_bottom_color = Color(0.18431373, 0.23921569, 0.12156863, 1)
+ground_horizon_color = Color(0.70980394, 0.8235294, 0.93333334, 1)
+
+[sub_resource type="Sky" id="Sky_ubjuk"]
+sky_material = SubResource("ProceduralSkyMaterial_dsodk")
+
+[resource]
+resource_name = "env_day"
+background_mode = 2
+sky = SubResource("Sky_ubjuk")
+ambient_light_source = 2
+ambient_light_color = Color(0.7490196, 0.6862745, 0.49411765, 1)
+ambient_light_energy = 0.5
+reflected_light_source = 1

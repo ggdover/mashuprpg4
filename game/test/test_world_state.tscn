@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://dmcrqlbrd5tsn"]
+
+[ext_resource type="Script" uid="uid://bx68vj0r5o8p4" path="res://test/world_state_test_scene.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bb18uu10fx5vg" path="res://test/arena.tscn" id="2_arena"]
+[ext_resource type="Script" uid="uid://cwur507blr8tl" path="res://world/environment_controller.gd" id="3_environment"]
+[ext_resource type="PackedScene" uid="uid://cjattjpo2lg4j" path="res://player/player.tscn" id="4_player"]
+[ext_resource type="PackedScene" uid="uid://b73i4v572qbf4" path="res://player/camera_rig.tscn" id="5_rig"]
+[ext_resource type="PackedScene" uid="uid://b0be6db3273sv" path="res://world/signpost.tscn" id="6_signpost"]
+[ext_resource type="PackedScene" uid="uid://bb0lo6x3jp10k" path="res://graybox/box_prop.tscn" id="7_prop"]
+[ext_resource type="Script" uid="uid://cecnht7qo1rr2" path="res://world/state_visibility.gd" id="8_visibility"]
+[ext_resource type="Material" uid="uid://cew0uipv4xquf" path="res://graybox/mat_frost.tres" id="9_frost"]
+[ext_resource type="PackedScene" uid="uid://bf8t1urmmtu4r" path="res://world/cairn.tscn" id="10_cairn"]
+
+[node name="TestWorldState" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Arena" parent="." instance=ExtResource("2_arena")]
+
+[node name="EnvironmentController" type="Node" parent="." node_paths=PackedStringArray("world_environment", "sun")]
+script = ExtResource("3_environment")
+world_environment = NodePath("../Arena/WorldEnvironment")
+sun = NodePath("../Arena/Sun")
+
+[node name="Player" parent="." node_paths=PackedStringArray("camera_rig") instance=ExtResource("4_player")]
+camera_rig = NodePath("../CameraRig")
+
+[node name="CameraRig" parent="." node_paths=PackedStringArray("target") instance=ExtResource("5_rig")]
+target = NodePath("../Player")
+
+[node name="StateNodes" type="Node3D" parent="."]
+
+[node name="SignDay" parent="StateNodes" instance=ExtResource("6_signpost")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, -4)
+text = "Sjön"
+fog = false
+
+[node name="SignFog" parent="StateNodes" instance=ExtResource("6_signpost")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, -4)
+text = "Norr"
+day = false
+
+[node name="Landmark" parent="StateNodes" instance=ExtResource("7_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -8.5)
+size = Vector3(3, 4, 3)
+
+[node name="StateVisibility" type="Node" parent="StateNodes/Landmark"]
+script = ExtResource("8_visibility")
+fog = false
+
+[node name="FogPath" type="Node3D" parent="StateNodes"]
+
+[node name="StateVisibility" type="Node" parent="StateNodes/FogPath"]
+script = ExtResource("8_visibility")
+day = false
+
+[node name="Slab1" parent="StateNodes/FogPath" instance=ExtResource("7_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 2)
+size = Vector3(1.6, 0.06, 1.6)
+material = ExtResource("9_frost")
+
+[node name="Slab2" parent="StateNodes/FogPath" instance=ExtResource("7_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 2.5)
+size = Vector3(1.6, 0.06, 1.6)
+material = ExtResource("9_frost")
+
+[node name="Slab3" parent="StateNodes/FogPath" instance=ExtResource("7_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 3)
+size = Vector3(1.6, 0.06, 1.6)
+material = ExtResource("9_frost")
+
+[node name="Slab4" parent="StateNodes/FogPath" instance=ExtResource("7_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 3.5)
+size = Vector3(1.6, 0.06, 1.6)
+material = ExtResource("9_frost")
+
+[node name="Slab5" parent="StateNodes/FogPath" instance=ExtResource("7_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 4)
+size = Vector3(1.6, 0.06, 1.6)
+material = ExtResource("9_frost")
+
+[node name="SignDeadEnd" parent="StateNodes/FogPath" instance=ExtResource("6_signpost")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0, 4.5)
+text = "Ingen väg"
+day = false
+
+[node name="Cairns" type="Node3D" parent="."]
+
+[node name="CairnLit" parent="Cairns" instance=ExtResource("10_cairn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -3)
+lit = true
+
+[node name="CairnUnlit" parent="Cairns" instance=ExtResource("10_cairn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 1)
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Overlay"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 17.0
+offset_bottom = 39.0
+theme_override_constants/outline_size = 6
