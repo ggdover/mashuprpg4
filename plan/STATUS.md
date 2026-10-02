@@ -5,7 +5,7 @@ Updated by the gauntlet merge step after each job. Status is one of: not started
 | Job | Status | Branch | Merge commit | Date | Notes |
 |-----|--------|--------|--------------|------|-------|
 | J01 | merged | job/J01-project-skeleton | 054877f | 2026-10-01 | Project skeleton, autoloads, palette, graybox kit, GUT (22 tests pass); 3 minor follow-ups in the job file review notes |
-| J02 | not started | | | | |
+| J02 | merged | job/J02-player-movement-aim-camera | 3c72c92 | 2026-10-01 | Player movement, mouse aim, dodge, camera rig, test_player.tscn as main scene (GUT 79 tests pass); 4 open minor follow-ups in the job file review notes |
 | J03 | not started | | | | |
 | J04 | not started | | | | |
 | J05 | not started | | | | |
