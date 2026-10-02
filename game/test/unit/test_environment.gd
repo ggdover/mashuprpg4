@@ -1,11 +1,13 @@
 extends GutTest
-## The environment presets and the controller that shows them. The presets carry the palette
-## roles the job names (a guard against the palette and the resources drifting apart), the
-## fog hides a box at the distances the job names, and the day and the fog preset agree on
-## everything a transition does not blend. The EnvironmentController shows the preset of the
-## state, tweens to the other one when the state changes, keeps to the cave preset in a
-## dungeon and leaves the preset resources as they are. The transition tests call _process
-## with the time that passes, so they do not depend on the machine.
+## The environment presets and the controller that shows them. Every colour a preset holds
+## is checked against the palette role it copies, and the day horizon against DAY_HORIZON:
+## a guard against the palette and the resources drifting apart, so a colour added to a
+## preset gets its assert here. The fog hides a box at the distances the job names, and the
+## day and the fog preset agree on everything a transition does not blend, which is also
+## what holds the fog preset's sky to the palette. The EnvironmentController shows the
+## preset of the state, tweens to the other one when the state changes, keeps to the cave
+## preset in a dungeon and leaves the preset resources as they are. The transition tests
+## call _process with the time that passes, so they do not depend on the machine.
 
 const ENV_DAY: Environment = preload("res://world/environment/env_day.tres")
 const ENV_FOG: Environment = preload("res://world/environment/env_fog.tres")
@@ -52,6 +54,8 @@ func test_day_preset_carries_the_day_palette() -> void:
 	assert_eq(ENV_DAY.background_mode, Environment.BG_SKY)
 	_assert_color(sky.sky_top_color, Palette.DAY["sky"], "sky top is the sky role")
 	_assert_color(sky.sky_horizon_color, DAY_HORIZON, "sky horizon is the day horizon")
+	_assert_color(sky.ground_horizon_color, DAY_HORIZON, "ground horizon is the day horizon too")
+	_assert_color(sky.ground_bottom_color, Palette.DAY["canopy"], "ground bottom is the canopy role")
 	assert_eq(ENV_DAY.ambient_light_source, Environment.AMBIENT_SOURCE_COLOR)
 	_assert_color(ENV_DAY.ambient_light_color, Palette.DAY["light"], "ambient is ramp light")
 	assert_almost_eq(ENV_DAY.ambient_light_energy, 0.5, TOLERANCE)
@@ -87,6 +91,7 @@ func test_cave_preset_is_dark_and_closes_in_twenty_metres_past_the_player() -> v
 	assert_almost_eq(_fog_amount(ENV_CAVE, _camera_distance), 0.0, TOLERANCE, "no fog on the player")
 	assert_gte(_fog_amount(ENV_CAVE, _camera_distance + CAVE_VISIBILITY), INVISIBLE, "nothing to see 20 m further")
 	assert_false(ENV_CAVE.volumetric_fog_enabled, "volumetric fog is off by default")
+	_assert_color(ENV_CAVE.volumetric_fog_albedo, Palette.FOG["shadow"], "and has the cave fog's colour when switched on")
 
 
 func test_light_presets_carry_the_palette() -> void:
