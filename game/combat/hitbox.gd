@@ -6,11 +6,18 @@ extends Area3D
 ## whose faction it is hostile to is handed [member damage_info].
 ##
 ## A hitbox hits what the physics engine has found overlapping, and the engine finds that
-## in its step at the end of a physics tick. So the first hits land on the physics tick
-## after the activation, never in the same tick: by then the engine has seen the hitbox
-## where it stands now, and a hitbox that was moved and activated in one go cannot hit what
-## stood at its old place. A hitbox that is added to the tree and activated between two
-## ticks takes one tick more. Keep a hitbox active for three ticks (0.05 s) or longer.
+## in its step at the end of a physics tick. So a hitbox sits out the first physics tick it
+## runs in after it is switched on. The step that ends that tick sees the hitbox where it
+## stands now, and a hitbox that was moved and activated in one go does not hit what stood
+## at its old place. The first hits land on the tick after that: one tick after an
+## activation that comes before the hitbox's own turn in a physics tick, two ticks after one
+## that comes later in a tick or between two ticks, where an input handler and
+## [method Node._process] run. Keep a hitbox active for three ticks (0.05 s) or longer.
+##
+## A tick of no length, which [member Engine.time_scale] 0 hands out, does not count: its
+## step finds nothing. Neither does a tick the hitbox does not run in, as while the tree is
+## paused, when the engine takes no step at all, nor a tick that a pause cuts short of its
+## step. The hits wait until time runs again.
 ##
 ## The faction sets the layer and the mask whenever it is assigned and when the node
 ## becomes ready. A script that wants another mask sets it after that.
@@ -29,7 +36,7 @@ signal hurtbox_hit(hurtbox: Hurtbox)
 	set(value):
 		if value and not active:
 			_already_hit.clear()
-			_activated_tick = Engine.get_physics_frames()
+			_sits_out = true
 		active = value
 ## True: a hurtbox is hit once between one activation and the next, however long it stays
 ## inside or how often it comes back. False: it is hit again every time it comes back in.
@@ -41,8 +48,10 @@ var damage_info: DamageInfo
 
 ## Instance ids of the hurtboxes that have had their hit.
 var _already_hit: Dictionary = {}
-## The physics tick [member active] was switched on in.
-var _activated_tick := -1
+## Whether the hitbox has yet to sit out a physics tick since it was switched on.
+var _sits_out := false
+## The physics tick the hitbox sat out last. A pause that begins inside it takes its step.
+var _sat_out_tick := -1
 
 
 func _ready() -> void:
@@ -50,8 +59,23 @@ func _ready() -> void:
 	_apply_faction()
 
 
-func _physics_process(_delta: float) -> void:
-	if not active or Engine.get_physics_frames() <= _activated_tick:
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_PAUSED or not Engine.is_in_physics_frame():
+		return
+	if Engine.get_physics_frames() == _sat_out_tick:
+		# The pause begins inside the tick the hitbox sat out. That tick ends without a
+		# step, so the hitbox sits out one more.
+		_sits_out = true
+
+
+func _physics_process(delta: float) -> void:
+	# A tick of no length has a step that finds nothing. It is neither sat out nor hit in.
+	if not active or delta <= 0.0:
+		return
+	if _sits_out:
+		# The step that ends this tick sees the hitbox as it was switched on.
+		_sits_out = false
+		_sat_out_tick = Engine.get_physics_frames()
 		return
 	var overlapping: Dictionary = {}
 	for area: Area3D in get_overlapping_areas():

@@ -3,6 +3,18 @@ extends GutTest
 ## resistance, Health with its interceptors and shields, the debug damage numbers, and
 ## hitboxes finding hurtboxes on real physics frames.
 
+## How a hitbox test brings the physics engine to a standstill, if at all.
+enum Standstill {
+	NONE,
+	## Engine.time_scale is 0 from before the hitbox is switched on.
+	STOPPED_TIME,
+	## The tree is paused right after the hitbox is switched on.
+	PAUSE,
+	## The tree is paused in a deferred call made right after the hitbox is switched on.
+	## From inside a physics tick that is when every node has had its turn in the tick.
+	LATE_PAUSE,
+}
+
 const TOLERANCE := 0.0001
 ## One physics tick in seconds, for the tests that run a clock by hand.
 const TICK := 1.0 / 60.0
@@ -18,10 +30,18 @@ const ROLLS := 400
 const FAR_AWAY := 10.0
 ## Damage of the hit the hitbox tests deal.
 const HIT_DAMAGE := 10.0
+## The key of the input events the tests send themselves. No action is bound to it.
+const TAP_KEY := KEY_F24
+
+## Whether the last hitbox a test moved and switched on in one go was inside a physics tick
+## at that moment.
+var _switched_on_in_a_tick := false
 
 
 func after_each() -> void:
 	randomize()
+	Engine.time_scale = 1.0
+	get_tree().paused = false
 
 
 # --- DamageInfo ---
@@ -793,20 +813,76 @@ func test_a_hurtbox_that_comes_back_in_is_hit_again_only_without_once_per_activa
 	assert_eq(returning.hits, 3, "and not again when it comes back within the same activation")
 
 
-func test_a_hitbox_moved_and_activated_in_one_go_does_not_hit_what_stood_at_its_old_place() -> void:
+func test_a_hitbox_moved_and_activated_in_a_physics_tick_does_not_hit_what_stood_at_its_old_place() -> void:
 	# The engine finds overlaps in its step at the end of a tick. Right after a move the
 	# hitbox still knows what overlapped it at the old place.
+	await _assert_a_moved_hitbox_spares_its_old_place(get_tree().physics_frame, true)
+
+
+func test_a_hitbox_moved_and_activated_between_two_ticks_does_not_hit_what_stood_at_its_old_place() -> void:
+	# A coroutine that process_frame resumes runs where every _process does: after the
+	# frame's physics ticks. The last step is over by then, and it saw the hitbox at its old
+	# place.
+	await _assert_a_moved_hitbox_spares_its_old_place(get_tree().process_frame, false)
+
+
+func test_a_hitbox_moved_and_activated_in_an_input_event_does_not_hit_what_stood_at_its_old_place() -> void:
+	# Where a skill fires: a key press or a click reaches a script between two ticks as well.
+	await _assert_a_moved_hitbox_spares_its_old_place(_tap_input_events(), false)
+
+
+func test_a_hitbox_moved_and_activated_at_the_very_end_of_a_tick_does_not_hit_what_stood_at_its_old_place() -> void:
+	# A deferred call that a physics timer makes runs when the nodes, timers and tweens of
+	# the tick are done: inside the tick still, but too late for its step to see the move.
 	var old_place := _target(Vector3.ZERO, Factions.Faction.ENEMY)
 	var new_place := _target(Vector3(FAR_AWAY, 0.0, 0.0), Factions.Faction.ENEMY)
 	var hitbox := _hitbox(Vector3.ZERO, Factions.Faction.PLAYER)
 	await _physics_steps(HIT_FRAMES)
 	assert_eq(hitbox.get_overlapping_areas().size(), 1, "the engine knows the hitbox overlaps the first target")
 
-	hitbox.position.x = FAR_AWAY
-	hitbox.active = true
+	_switched_on_in_a_tick = false
+	var timer := get_tree().create_timer(TICK, true, true)
+	timer.timeout.connect(_move_and_switch_on.bind(hitbox), CONNECT_DEFERRED)
 	await _physics_steps(ACTIVE_FRAMES)
+	assert_true(_switched_on_in_a_tick, "the move came inside a physics tick")
 	assert_eq(old_place.hits, 0, "the target at the old place is spared")
 	assert_eq(new_place.hits, 1, "the one at the new place is hit")
+
+
+func test_a_hitbox_moved_and_activated_in_a_tick_of_no_length_waits_until_time_runs_again() -> void:
+	# Engine.time_scale 0 hands out ticks of no length, and the step of such a tick finds
+	# nothing: the hitbox goes on knowing what overlapped it at the old place.
+	await _assert_a_moved_hitbox_spares_its_old_place(get_tree().physics_frame, true, Standstill.STOPPED_TIME)
+
+
+func test_a_hitbox_moved_and_activated_between_two_ticks_of_no_length_waits_until_time_runs_again() -> void:
+	await _assert_a_moved_hitbox_spares_its_old_place(get_tree().process_frame, false, Standstill.STOPPED_TIME)
+
+
+func test_a_hitbox_moved_and_activated_as_the_tree_is_paused_waits_for_a_step_after_the_pause() -> void:
+	# A click and the pause key that arrive in one frame. The engine takes no step while
+	# the tree is paused, so after the pause the hitbox still knows what overlapped it at
+	# the old place.
+	await _assert_a_moved_hitbox_spares_its_old_place(get_tree().process_frame, false, Standstill.PAUSE)
+
+
+func test_a_hitbox_moved_and_activated_in_a_tick_that_a_pause_cuts_short_waits_for_a_step_after_the_pause() -> void:
+	# A pause that begins inside a physics tick takes the step from that tick. This one
+	# begins when every node has had its turn in the tick: the hitbox has sat the tick out
+	# by then, and for nothing.
+	await _assert_a_moved_hitbox_spares_its_old_place(get_tree().physics_frame, true, Standstill.LATE_PAUSE)
+
+
+func test_the_first_hits_land_one_or_two_ticks_after_the_activation() -> void:
+	# What "keep a hitbox active for three ticks or longer" rests on: a hitbox sits out the
+	# first tick it runs in after it is switched on.
+	var in_a_tick := get_tree().physics_frame
+	var between_two_ticks := get_tree().process_frame
+	assert_eq(await _ticks_to_the_first_hit(in_a_tick), 1, "switched on ahead of its turn in a physics tick, a hitbox hits on the next tick")
+	assert_eq(await _ticks_to_the_first_hit(in_a_tick, false, true), 2, "switched on when it has had its turn in the tick, it sits out the next one")
+	assert_eq(await _ticks_to_the_first_hit(between_two_ticks), 2, "switched on between two ticks, it sits out the coming one")
+	assert_eq(await _ticks_to_the_first_hit(in_a_tick, true), 1, "a hitbox that enters the tree as it is switched on is no slower inside a tick")
+	assert_eq(await _ticks_to_the_first_hit(between_two_ticks, true), 2, "and no slower between two ticks")
 
 
 func test_a_listener_that_switches_the_hitbox_off_ends_the_hits_of_that_tick() -> void:
@@ -893,6 +969,93 @@ func _box_shape(size: Vector3) -> CollisionShape3D:
 	return shape
 
 
+## A signal that fires once every rendered frame from inside the handling of an input event.
+func _tap_input_events() -> Signal:
+	var tap := InputTap.new()
+	add_child_autofree(tap)
+	return tap.arrived
+
+
+## Stops time. The frame under way keeps the time scale it began with. Its ticks are over
+## once it reaches its process step, and every tick after that has no length.
+func _stop_time() -> void:
+	Engine.time_scale = 0.0
+	await get_tree().process_frame
+
+
+## Moves [param hitbox] to where the far target of a test stands and switches it on. Notes
+## whether that came inside a physics tick.
+func _move_and_switch_on(hitbox: Hitbox) -> void:
+	_switched_on_in_a_tick = Engine.is_in_physics_frame()
+	hitbox.position.x = FAR_AWAY
+	hitbox.active = true
+
+
+## Lets a hitbox overlap one target, then moves it onto another and switches it on in one
+## go as soon as [param resumed_by] fires. Asserts that this is inside a physics tick or
+## between two, as [param in_a_tick] says, and that only the target at the new place is hit.
+## With a [param standstill] the physics engine stands still around that moment and for a
+## dozen ticks after it: no hit may land before time runs again.
+func _assert_a_moved_hitbox_spares_its_old_place(
+		resumed_by: Signal, in_a_tick: bool, standstill: Standstill = Standstill.NONE
+) -> void:
+	var old_place := _target(Vector3.ZERO, Factions.Faction.ENEMY)
+	var new_place := _target(Vector3(FAR_AWAY, 0.0, 0.0), Factions.Faction.ENEMY)
+	var hitbox := _hitbox(Vector3.ZERO, Factions.Faction.PLAYER)
+	await _physics_steps(HIT_FRAMES)
+	assert_eq(hitbox.get_overlapping_areas().size(), 1, "the engine knows the hitbox overlaps the first target")
+	if standstill == Standstill.STOPPED_TIME:
+		await _stop_time()
+
+	await resumed_by
+	_move_and_switch_on(hitbox)
+	if in_a_tick:
+		assert_true(_switched_on_in_a_tick, "the move came inside a physics tick")
+	else:
+		assert_false(_switched_on_in_a_tick, "the move came between two physics ticks")
+	if standstill == Standstill.PAUSE:
+		get_tree().paused = true
+	elif standstill == Standstill.LATE_PAUSE:
+		get_tree().set_deferred(&"paused", true)
+	await _physics_steps(ACTIVE_FRAMES)
+	if standstill != Standstill.NONE:
+		assert_eq(old_place.hits + new_place.hits, 0, "at a standstill nothing is hit")
+		Engine.time_scale = 1.0
+		# A pause ends where the player ends it: in an input handler, between two ticks.
+		await get_tree().process_frame
+		get_tree().paused = false
+		await _physics_steps(ACTIVE_FRAMES)
+	assert_eq(old_place.hits, 0, "the target at the old place is spared")
+	assert_eq(new_place.hits, 1, "the one at the new place is hit")
+
+
+## Switches a hitbox on over a target as soon as [param resumed_by] fires. Returns how many
+## physics ticks lie between the tick the engine counted last at that moment and the tick
+## of the hit. With [param spawned] the hitbox enters the tree at that moment as well;
+## without it, it has stood there for a while. With [param deferred] it is switched on in a
+## deferred call: inside a physics tick that is after every _physics_process of the tick.
+func _ticks_to_the_first_hit(
+		resumed_by: Signal, spawned: bool = false, deferred: bool = false
+) -> int:
+	var target := _target(Vector3.ZERO, Factions.Faction.ENEMY)
+	var hitbox: Hitbox = null
+	if not spawned:
+		hitbox = _hitbox(Vector3.ZERO, Factions.Faction.PLAYER)
+	await _physics_steps(HIT_FRAMES)
+	await resumed_by
+	if spawned:
+		hitbox = _hitbox(Vector3.ZERO, Factions.Faction.PLAYER)
+	var switched_on := Engine.get_physics_frames()
+	if deferred:
+		hitbox.set_deferred(&"active", true)
+	else:
+		hitbox.active = true
+	await _physics_steps(ACTIVE_FRAMES)
+	# Off again: the target of the next run stands in the same place.
+	hitbox.active = false
+	return target.hit_tick - switched_on
+
+
 ## An actor reduced to what a hit needs: a hurtbox, its health and a count of the hits.
 class HitTarget:
 	extends RefCounted
@@ -901,9 +1064,30 @@ class HitTarget:
 	var health: Health
 	var hurtbox: Hurtbox
 	var hits := 0
+	## The physics tick the last hit landed in.
+	var hit_tick := -1
 
 	func count_hit(_info: DamageInfo, _amount: float) -> void:
 		hits += 1
+		hit_tick = Engine.get_physics_frames()
+
+
+## Sends itself an input event every rendered frame and emits [signal arrived] from inside
+## the handling of each: the place in a frame where a key press or a click reaches a script.
+class InputTap:
+	extends Node
+
+	signal arrived
+
+	func _process(_delta: float) -> void:
+		var event := InputEventKey.new()
+		event.physical_keycode = TAP_KEY
+		Input.parse_input_event(event)
+
+	func _input(event: InputEvent) -> void:
+		var key := event as InputEventKey
+		if key != null and key.physical_keycode == TAP_KEY:
+			arrived.emit()
 
 
 ## An interceptor in the shape of Parry: cancels one hit and takes itself off the list.
