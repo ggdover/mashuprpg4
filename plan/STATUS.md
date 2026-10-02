@@ -18,7 +18,7 @@ Updated by the gauntlet merge step after each job. Status is one of: not started
 | J12 | not started | | | | |
 | J13 | not started | | | | |
 | J14 | not started | | | | |
-| J15 | not started | | | | |
+| J15 | merged | job/J15-quest-system | 5195470 | 2026-10-02 | Quest system (QuestManager autoload, objectives, rewards, QuestTrigger), journal panel, test chain and test_quests.tscn (GUT 177 tests pass); 10 open minor follow-ups in the job file review notes |
 | J16 | not started | | | | |
 | J17 | not started | | | | |
 | J18 | not started | | | | |
