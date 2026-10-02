@@ -4,7 +4,8 @@ extends GutTest
 ## fog hides a box at the distances the job names, and the day and the fog preset agree on
 ## everything a transition does not blend. The EnvironmentController shows the preset of the
 ## state, tweens to the other one when the state changes, keeps to the cave preset in a
-## dungeon and leaves the preset resources as they are.
+## dungeon and leaves the preset resources as they are. The transition tests call _process
+## with the time that passes, so they do not depend on the machine.
 
 const ENV_DAY: Environment = preload("res://world/environment/env_day.tres")
 const ENV_FOG: Environment = preload("res://world/environment/env_fog.tres")
@@ -25,10 +26,8 @@ const BARELY_VISIBLE := 0.85
 const INVISIBLE := 0.99
 ## The most fog that may lie on the player at the default zoom for the fight to stay readable.
 const READABLE := 0.5
-## Seconds the transition tests give the controller instead of its 2.5.
-const SHORT_TRANSITION := 0.4
-## Seconds for a transition that a test looks at part of the way through.
-const LONG_TRANSITION := 1.0
+## Seconds a change of state takes to show, as the job gives them.
+const TRANSITION := 2.5
 const TOLERANCE := 0.0001
 
 var _camera_distance := 0.0
@@ -184,33 +183,36 @@ func test_a_zone_starts_in_the_look_of_its_state() -> void:
 	_assert_shows(_make_controller(), ENV_FOG, LIGHT_FOG, "ready in fog, with nothing to tween from")
 
 
-func test_a_change_of_state_takes_two_and_a_half_seconds_by_default() -> void:
-	var controller := EnvironmentController.new()
-	assert_eq(controller.transition_seconds, 2.5)
-	controller.free()
-
-
-func test_a_change_of_state_tweens_to_the_other_look() -> void:
+func test_a_change_of_state_tweens_to_the_other_look_in_two_and_a_half_seconds() -> void:
 	var controller := _make_controller()
-	controller.transition_seconds = LONG_TRANSITION
+	assert_eq(controller.transition_seconds, TRANSITION, "2.5 s unless a scene says otherwise")
+	assert_false(controller.is_processing(), "nothing to do while the look stands")
 	WorldState.state = WorldState.State.FOG
 	var shown := controller.world_environment.environment
+	var full_fog := _fog_amount(ENV_FOG, BARELY_VISIBLE_AT)
+	assert_true(controller.is_processing(), "the transition is under way")
 	assert_true(shown.fog_enabled, "the fog is switched on at once")
 	assert_almost_eq(_fog_amount(shown, BARELY_VISIBLE_AT), 0.0, TOLERANCE, "but there is none of it yet")
 	assert_almost_eq(shown.fog_sky_affect, 0.0, TOLERANCE, "nor over the sky")
 	assert_almost_eq(shown.ambient_light_energy, ENV_DAY.ambient_light_energy, TOLERANCE, "the ambient light is still the day's")
 	assert_almost_eq(controller.sun.light_energy, LIGHT_DAY.energy, TOLERANCE, "and so is the sun")
 
-	await wait_seconds(LONG_TRANSITION * 0.3)
-	var fog_on_the_way := _fog_amount(shown, BARELY_VISIBLE_AT)
-	assert_between(fog_on_the_way, 0.01, _fog_amount(ENV_FOG, BARELY_VISIBLE_AT) - 0.01, "on the way the fog is part of the way in")
-	assert_between(shown.ambient_light_energy, ENV_DAY.ambient_light_energy + 0.01, ENV_FOG.ambient_light_energy - 0.01, "the ambient light part of the way up")
-	assert_between(controller.sun.light_energy, LIGHT_FOG.energy + 0.01, LIGHT_DAY.energy - 0.01, "and the sun part of the way down")
-	assert_false(controller.sun.light_color.is_equal_approx(LIGHT_DAY.color), "its colour has left the day's")
-	assert_false(controller.sun.light_color.is_equal_approx(LIGHT_FOG.color), "and not yet reached the fog's")
+	controller._process(TRANSITION * 0.5)
+	assert_almost_eq(_fog_amount(shown, BARELY_VISIBLE_AT), full_fog * 0.5, TOLERANCE, "half-way, half the fog is in")
+	assert_almost_eq(shown.fog_sky_affect, 0.5, TOLERANCE, "and half over the sky")
+	assert_almost_eq(shown.ambient_light_energy, lerpf(ENV_DAY.ambient_light_energy, ENV_FOG.ambient_light_energy, 0.5), TOLERANCE)
+	_assert_color(shown.ambient_light_color, ENV_DAY.ambient_light_color.lerp(ENV_FOG.ambient_light_color, 0.5), "the ambient colour is between the two")
+	assert_almost_eq(controller.sun.light_energy, lerpf(LIGHT_DAY.energy, LIGHT_FOG.energy, 0.5), TOLERANCE)
+	_assert_color(controller.sun.light_color, LIGHT_DAY.color.lerp(LIGHT_FOG.color, 0.5), "and so is the sun's")
+	assert_almost_eq(controller.sun.light_angular_distance, LIGHT_FOG.shadow_softness * 0.5, TOLERANCE, "the shadows are half as soft")
 
-	await wait_seconds(LONG_TRANSITION)
-	_assert_shows(controller, ENV_FOG, LIGHT_FOG, "after the transition")
+	controller._process(TRANSITION * 0.5 - 0.05)
+	assert_true(controller.is_processing(), "a moment before 2.5 s it is still on its way")
+	assert_lt(_fog_amount(shown, BARELY_VISIBLE_AT), full_fog)
+
+	controller._process(0.1)
+	_assert_shows(controller, ENV_FOG, LIGHT_FOG, "after 2.5 s")
+	assert_false(controller.is_processing(), "and the controller rests")
 
 
 func test_a_transition_back_to_day_fades_the_fog_out_and_switches_it_off() -> void:
@@ -218,46 +220,62 @@ func test_a_transition_back_to_day_fades_the_fog_out_and_switches_it_off() -> vo
 	var controller := _make_controller()
 	WorldState.state = WorldState.State.DAY
 	var shown := controller.world_environment.environment
+	var full_fog := _fog_amount(ENV_FOG, BARELY_VISIBLE_AT)
 	assert_true(shown.fog_enabled, "the fog stays on while it fades")
-	assert_almost_eq(_fog_amount(shown, BARELY_VISIBLE_AT), _fog_amount(ENV_FOG, BARELY_VISIBLE_AT), TOLERANCE, "and starts from all of it, in the same shape")
-	_assert_color(shown.fog_light_color, ENV_FOG.fog_light_color, "and in the fog's colour")
-	await wait_seconds(SHORT_TRANSITION + 0.2)
+	assert_almost_eq(_fog_amount(shown, BARELY_VISIBLE_AT), full_fog, TOLERANCE, "and starts from all of it, in the same shape")
+	controller._process(TRANSITION * 0.5)
+	assert_almost_eq(_fog_amount(shown, BARELY_VISIBLE_AT), full_fog * 0.5, TOLERANCE, "half-way, half of it is left")
+	_assert_color(shown.fog_light_color, ENV_FOG.fog_light_color, "still in the fog's own colour")
+	controller._process(TRANSITION * 0.5)
 	_assert_shows(controller, ENV_DAY, LIGHT_DAY, "after the transition")
 
 
 func test_a_transition_that_is_interrupted_goes_on_from_where_it_stands() -> void:
 	var controller := _make_controller()
-	controller.transition_seconds = LONG_TRANSITION
 	WorldState.state = WorldState.State.FOG
-	await wait_seconds(LONG_TRANSITION * 0.3)
+	controller._process(TRANSITION * 0.3)
 	var fog_before := _fog_amount(controller.world_environment.environment, BARELY_VISIBLE_AT)
 	var sun_before := controller.sun.light_energy
-	controller.transition_seconds = SHORT_TRANSITION
 	WorldState.state = WorldState.State.DAY
 	var shown := controller.world_environment.environment
+	assert_gt(fog_before, 0.0, "some fog was in")
 	assert_almost_eq(_fog_amount(shown, BARELY_VISIBLE_AT), fog_before, TOLERANCE, "the fog does not jump when the state turns back")
 	assert_almost_eq(controller.sun.light_energy, sun_before, TOLERANCE, "nor does the sun")
-	await wait_seconds(SHORT_TRANSITION + 0.2)
+	controller._process(TRANSITION * 0.5)
+	assert_almost_eq(_fog_amount(shown, BARELY_VISIBLE_AT), fog_before * 0.5, TOLERANCE, "it fades from there")
+	controller._process(TRANSITION * 0.5)
 	_assert_shows(controller, ENV_DAY, LIGHT_DAY, "after the way back")
+
+
+func test_a_transition_runs_by_itself_in_the_running_game() -> void:
+	var controller := _make_controller()
+	controller.transition_seconds = 0.2
+	WorldState.state = WorldState.State.FOG
+	await wait_seconds(0.6)
+	_assert_shows(controller, ENV_FOG, LIGHT_FOG, "nobody stepped it: the frames did")
+	assert_false(controller.is_processing())
 
 
 func test_force_cave_shows_the_cave_in_both_states() -> void:
 	var controller := EnvironmentController.new()
 	controller.force_cave = true
-	controller.transition_seconds = SHORT_TRANSITION
 	add_child_autofree(controller)
 	_assert_shows(controller, ENV_CAVE, null, "a dungeon by day")
 	WorldState.state = WorldState.State.FOG
 	_assert_shows(controller, ENV_CAVE, null, "and at once in fog: nothing tweens")
+	assert_false(controller.is_processing())
 
 
 func test_leaving_the_cave_brings_the_look_of_the_state_back() -> void:
 	var controller := _make_controller()
 	controller.force_cave = true
-	await wait_seconds(SHORT_TRANSITION + 0.2)
+	assert_true(controller.sun.visible, "the sun fades out; it does not drop out")
+	controller._process(TRANSITION)
 	_assert_shows(controller, ENV_CAVE, null, "in the cave")
 	controller.force_cave = false
-	await wait_seconds(SHORT_TRANSITION + 0.2)
+	assert_true(controller.sun.visible, "and comes up again from nothing")
+	assert_almost_eq(controller.sun.light_energy, 0.0, TOLERANCE)
+	controller._process(TRANSITION)
 	_assert_shows(controller, ENV_DAY, LIGHT_DAY, "out of it")
 
 
@@ -266,9 +284,9 @@ func test_the_presets_are_left_as_they_are() -> void:
 	var fog_density := ENV_FOG.fog_density
 	var controller := _make_controller()
 	WorldState.state = WorldState.State.FOG
-	await wait_seconds(SHORT_TRANSITION * 0.5)
+	controller._process(TRANSITION * 0.5)
 	WorldState.state = WorldState.State.DAY
-	await wait_seconds(SHORT_TRANSITION + 0.2)
+	controller._process(TRANSITION)
 	assert_ne(controller.world_environment.environment, ENV_DAY, "the controller shows a copy")
 	assert_false(ENV_DAY.fog_enabled, "the day preset still has no fog")
 	_assert_color(ENV_DAY.ambient_light_color, day_ambient, "and its own ambient light")
@@ -290,9 +308,28 @@ func test_volumetric_fog_is_off_until_it_is_asked_for() -> void:
 	assert_true(controller.world_environment.environment.volumetric_fog_enabled, "it comes back with the fog")
 
 
+func test_volumetric_fog_fades_in_with_the_fog() -> void:
+	var controller := _make_controller()
+	controller.volumetric_fog = true
+	assert_false(controller.world_environment.environment.volumetric_fog_enabled, "none by day")
+	WorldState.state = WorldState.State.FOG
+	var shown := controller.world_environment.environment
+	assert_true(shown.volumetric_fog_enabled, "it is switched on as the fog starts")
+	assert_almost_eq(shown.volumetric_fog_density, 0.0, TOLERANCE, "with none of it there yet")
+	controller._process(TRANSITION)
+	assert_almost_eq(shown.volumetric_fog_density, ENV_FOG.volumetric_fog_density, TOLERANCE, "and ends at the preset's density")
+
+
+func test_show_state_waits_for_the_controller_to_be_ready() -> void:
+	var controller := EnvironmentController.new()
+	controller.show_state(0.0)
+	assert_null(controller.world_environment, "nothing is made or shown before the node is in the tree")
+	add_child_autofree(controller)
+	_assert_shows(controller, ENV_DAY, LIGHT_DAY, "once it is ready")
+
+
 func _make_controller() -> EnvironmentController:
 	var controller := EnvironmentController.new()
-	controller.transition_seconds = SHORT_TRANSITION
 	add_child_autofree(controller)
 	return controller
 
@@ -317,35 +354,3 @@ func _assert_shows(controller: EnvironmentController, environment: Environment, 
 	_assert_color(controller.sun.light_color, light.color, text + ": sun colour")
 	assert_almost_eq(controller.sun.light_energy, light.energy, TOLERANCE, text + ": sun energy")
 	assert_almost_eq(controller.sun.light_angular_distance, light.shadow_softness, TOLERANCE, text + ": shadow softness")
-
-
-func test_the_default_transition_is_under_way_after_two_seconds_and_done_after_three() -> void:
-	var controller := EnvironmentController.new()
-	add_child_autofree(controller)
-	WorldState.state = WorldState.State.FOG
-	await wait_seconds(2.0)
-	var full := _fog_amount(ENV_FOG, BARELY_VISIBLE_AT)
-	var shown := controller.world_environment.environment
-	assert_between(_fog_amount(shown, BARELY_VISIBLE_AT), 0.6 * full, 0.95 * full, "2 s into the 2.5: most of the fog is in, not all of it")
-	await wait_seconds(1.0)
-	_assert_shows(controller, ENV_FOG, LIGHT_FOG, "after 3 s")
-
-
-func test_show_state_waits_for_the_controller_to_be_ready() -> void:
-	var controller := EnvironmentController.new()
-	controller.show_state(0.0)
-	assert_null(controller.world_environment, "nothing is made or shown before the node is in the tree")
-	add_child_autofree(controller)
-	_assert_shows(controller, ENV_DAY, LIGHT_DAY, "once it is ready")
-
-
-func test_volumetric_fog_fades_in_with_the_fog() -> void:
-	var controller := _make_controller()
-	controller.volumetric_fog = true
-	assert_false(controller.world_environment.environment.volumetric_fog_enabled, "none by day")
-	WorldState.state = WorldState.State.FOG
-	var shown := controller.world_environment.environment
-	assert_true(shown.volumetric_fog_enabled, "it is switched on as the fog starts")
-	assert_almost_eq(shown.volumetric_fog_density, 0.0, TOLERANCE, "with none of it there yet")
-	await wait_seconds(SHORT_TRANSITION + 0.2)
-	assert_almost_eq(shown.volumetric_fog_density, ENV_FOG.volumetric_fog_density, TOLERANCE, "and ends at the preset's density")

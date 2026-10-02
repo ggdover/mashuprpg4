@@ -67,7 +67,9 @@ const SUN_SOFTNESS := &"light_angular_distance"
 ## The copy of a preset that the WorldEnvironment shows and the transitions write to. Null
 ## until the first look is shown.
 var _environment: Environment
-var _tween: Tween
+## How long the running transition takes and how much of that time has passed, in seconds.
+var _transition_seconds := 0.0
+var _transition_elapsed := 0.0
 ## What the running transition blends from and to: property name to value, for the
 ## environment and for the sun.
 var _environment_from: Dictionary[StringName, Variant] = {}
@@ -102,16 +104,21 @@ func show_state(seconds: float) -> void:
 		return
 	_set_course_of_sun(_get_target_light(), _environment != null and sun.visible)
 	_set_course_of_environment(_get_target_environment())
-	if _tween != null:
-		_tween.kill()
-	if seconds > 0.0 and is_inside_tree():
-		_blend(0.0)
-		_tween = create_tween()
-		_tween.tween_method(_blend, 0.0, 1.0, seconds)
-		_tween.tween_callback(_finish)
-	else:
-		_blend(1.0)
-		_finish()
+	_transition_seconds = maxf(seconds, 0.0)
+	_transition_elapsed = 0.0
+	set_process(true)
+	_process(0.0)
+
+
+## Carries the running transition on by [param delta] seconds and ends it once its time is
+## up. A transition of no length ends at once.
+func _process(delta: float) -> void:
+	_transition_elapsed += delta
+	if _transition_elapsed < _transition_seconds:
+		_blend(_transition_elapsed / _transition_seconds)
+		return
+	_blend(1.0)
+	_finish()
 
 
 ## The preset the environment is heading for.
@@ -198,11 +205,13 @@ func _blend(weight: float) -> void:
 		sun.set(property, lerp(_sun_from[property], _sun_to[property], weight))
 
 
-## Ends a transition: what the preset does not have is switched off for good.
+## Ends a transition: what the preset does not have is switched off for good, and the
+## controller rests until the next one.
 func _finish() -> void:
 	_environment.fog_enabled = _get_target_environment().fog_enabled
 	_environment.volumetric_fog_enabled = volumetric_fog and _environment.fog_enabled
 	sun.visible = _get_target_light() != null
+	set_process(false)
 
 
 func _on_world_state_changed(_state: int) -> void:
