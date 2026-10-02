@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://b0be6db3273sv"]
+
+[ext_resource type="Script" uid="uid://dmxm32ptrnucg" path="res://world/signpost.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bb0lo6x3jp10k" path="res://graybox/box_prop.tscn" id="2_prop"]
+[ext_resource type="Script" uid="uid://cecnht7qo1rr2" path="res://world/state_visibility.gd" id="3_visibility"]
+
+[node name="Signpost" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Post" parent="." instance=ExtResource("2_prop")]
+size = Vector3(0.3, 2.2, 0.3)
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 0)
+billboard = 1
+font_size = 96
+outline_size = 24
+
+[node name="StateVisibility" type="Node" parent="."]
+script = ExtResource("3_visibility")

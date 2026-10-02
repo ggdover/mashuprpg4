@@ -34,6 +34,16 @@ signal xp_gained(amount: int)
 signal flag_set(flag: StringName)
 ## WorldState switched state. [param state] is a WorldState.State value.
 signal world_state_changed(state: int)
+## WorldState.request_fog brought the fog. [param reason] says who asked:
+## [code]&"random"[/code] for a roll at zone entry, otherwise a name the caller chose, such
+## as the story flag [code]&"FOG_1"[/code].
+signal fog_started(reason: StringName)
+## WorldState.end_fog took the fog away.
+signal fog_ended
+## The horn sounds from the village: at every fog start outside a dungeon.
+signal horn_sounded
+## The player lit a cairn. [param cairn] is the Cairn node.
+signal cairn_lit(cairn: Node3D)
 ## The player entered a zone.
 signal zone_entered(zone_id: StringName)
 ## A dialogue with an NPC opened.

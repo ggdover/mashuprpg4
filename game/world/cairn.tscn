@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://bf8t1urmmtu4r"]
+
+[ext_resource type="Script" uid="uid://bwnxgq87ga6qy" path="res://world/cairn.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bb0lo6x3jp10k" path="res://graybox/box_prop.tscn" id="2_prop"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_beacon"]
+size = Vector3(0.3, 10, 0.3)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interact"]
+radius = 1.2
+
+[node name="Cairn" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Base" parent="." instance=ExtResource("2_prop")]
+size = Vector3(1.2, 0.5, 1.2)
+
+[node name="Middle" parent="." instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+size = Vector3(0.9, 0.4, 0.9)
+
+[node name="Top" parent="." instance=ExtResource("2_prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+size = Vector3(0.6, 0.35, 0.6)
+
+[node name="Fire" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+visible = false
+light_energy = 2.0
+omni_range = 8.0
+
+[node name="Beacon" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.25, 0)
+visible = false
+cast_shadow = 0
+mesh = SubResource("BoxMesh_beacon")
+
+[node name="InteractArea" type="Area3D" parent="."]
+collision_layer = 256
+collision_mask = 0
+monitoring = false
+
+[node name="Shape" type="CollisionShape3D" parent="InteractArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("SphereShape3D_interact")

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cn7uirs35tig7" path="res://player/player.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="2_actor"]
 [ext_resource type="Script" uid="uid://6813kx1ylw0s" path="res://player/aim.gd" id="3_aim"]
+[ext_resource type="Script" uid="uid://dc5yeh3tc8xsy" path="res://player/player_light.gd" id="4_light"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -23,3 +24,7 @@ size_class = 0
 [node name="Aim" type="Node" parent="."]
 process_physics_priority = -1
 script = ExtResource("3_aim")
+
+[node name="PlayerLight" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+script = ExtResource("4_light")

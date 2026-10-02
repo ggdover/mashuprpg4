@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LightPreset" format=3 uid="uid://ca1htwykw701s"]
+
+[ext_resource type="Script" uid="uid://dbyvh7gqlg1lh" path="res://world/environment/light_preset.gd" id="1_r0kpu"]
+
+[resource]
+resource_name = "light_fog"
+script = ExtResource("1_r0kpu")
+color = Color(0.7607843, 0.85490197, 0.9098039, 1)
+energy = 0.35
+shadow_softness = 3.0

@@ -1,9 +1,11 @@
 extends GutTest
 ## The gray-box kit sizes its boxes from the size class, keeps collision in step with the
-## mesh, and gives every instance and every duplicate its own mesh and shape.
+## mesh, and gives every instance and every duplicate its own mesh and shape. The kit
+## materials and the arena hold the palette colours their roles name.
 
 const BOX_ACTOR: PackedScene = preload("res://graybox/box_actor.tscn")
 const BOX_PROP: PackedScene = preload("res://graybox/box_prop.tscn")
+const ARENA: PackedScene = preload("res://test/arena.tscn")
 
 
 func test_actor_body_takes_the_size_class_dimensions() -> void:
@@ -120,3 +122,30 @@ func _assert_body_size(size_class: Graybox.SizeClass) -> void:
 	var expected := Graybox.size_of(size_class)
 	assert_eq((actor.body.mesh as BoxMesh).size, expected, "body size for class %d" % size_class)
 	assert_eq(actor.body.position.y, expected.y * 0.5, "body is centred above the feet")
+
+
+func test_kit_materials_carry_their_palette_roles() -> void:
+	# The materials hold literal copies of palette colours, because a resource cannot read a
+	# script constant. This catches a palette edit that leaves one of them behind.
+	_assert_albedo(Graybox.MAT_GRAY, Palette.DAY["mid"], "mat_gray is day ramp mid")
+	_assert_albedo(Graybox.MAT_FROST, Palette.FOG["lichen"], "mat_frost is fog lichen")
+	_assert_albedo(Graybox.MAT_HIGHLIGHT, Palette.DAY["sun"], "mat_highlight is day sun")
+	_assert_albedo(Graybox.MAT_RARITY_COMMON, Palette.DAY["light"], "common is day ramp light")
+	_assert_albedo(Graybox.MAT_RARITY_FINE, Palette.DAY["moss-lit"], "fine is day moss-lit")
+	_assert_albedo(Graybox.MAT_RARITY_RARE, Palette.DAY["sky"], "rare is day sky")
+	_assert_albedo(Graybox.MAT_RARITY_LEGENDARY, Palette.DAY["sun"], "legendary is day sun")
+
+
+func test_arena_light_and_environment_carry_their_palette_roles() -> void:
+	var arena: Node3D = ARENA.instantiate()
+	add_child_autofree(arena)
+	var sun: DirectionalLight3D = arena.get_node("Sun")
+	var environment := (arena.get_node("WorldEnvironment") as WorldEnvironment).environment
+	assert_true(sun.light_color.is_equal_approx(Palette.DAY["sun"]), "the arena's sun is day sun")
+	assert_true(environment.ambient_light_color.is_equal_approx(Palette.DAY["sky"]), "its ambient light is day sky")
+	assert_true(environment.background_color.is_equal_approx(Palette.DAY["sky"]), "and so is its background")
+
+
+func _assert_albedo(material: Material, expected: Color, text: String) -> void:
+	var albedo := (material as StandardMaterial3D).albedo_color
+	assert_true(albedo.is_equal_approx(expected), "%s: #%s, expected #%s" % [text, albedo.to_html(false), expected.to_html(false)])

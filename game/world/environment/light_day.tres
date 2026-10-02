@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="LightPreset" format=3 uid="uid://31csv3ansmj7"]
+
+[ext_resource type="Script" uid="uid://dbyvh7gqlg1lh" path="res://world/environment/light_preset.gd" id="1_mp1xp"]
+
+[resource]
+resource_name = "light_day"
+script = ExtResource("1_mp1xp")
+color = Color(0.9019608, 0.78431374, 0.47058824, 1)
+energy = 1.2
