@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="QuestData" format=3 uid="uid://dy0hx2trwogbp"]
+
+[ext_resource type="Script" uid="uid://bacnppngrcjwt" path="res://quests/objective_data.gd" id="1_objective"]
+[ext_resource type="Script" uid="uid://o6ot141fjdc" path="res://quests/quest_rewards.gd" id="2_rewards"]
+[ext_resource type="Script" uid="uid://dq4c0tfk0bhw3" path="res://quests/quest_data.gd" id="3_quest"]
+
+[sub_resource type="Resource" id="Resource_kill"]
+script = ExtResource("1_objective")
+description = "Knock down test dummies"
+target_count = 3
+enemy_id = &"test_dummy"
+
+[sub_resource type="Resource" id="Resource_rewards"]
+script = ExtResource("2_rewards")
+xp = 50
+flags = Array[StringName]([&"a_done"])
+
+[resource]
+script = ExtResource("3_quest")
+id = &"test_a"
+display_name = "Dummies in the yard"
+summary = "The test NPC wants three test dummies knocked down."
+objectives = Array[ExtResource("1_objective")]([SubResource("Resource_kill")])
+giver_npc = &"test_npc"
+rewards = SubResource("Resource_rewards")

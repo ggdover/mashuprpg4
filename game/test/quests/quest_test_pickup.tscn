@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cpees2t5w8n4j"]
+
+[ext_resource type="Script" uid="uid://slpex41ethp7" path="res://test/quests/quest_test_pickup.gd" id="1_script"]
+
+[node name="QuestTestPickup" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+billboard = 1
+text = "Test item"

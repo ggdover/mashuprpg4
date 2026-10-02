@@ -14,10 +14,22 @@ signal enemy_died(enemy: Node)
 signal player_died
 ## The player picked an item up. [param item] stays a Variant until J06 decides what it carries.
 signal item_picked_up(item: Variant)
-## A quest's objective progress changed.
+## A quest that is under way changed: it started, an objective moved, it became ready to
+## turn in, it completed. The journal redraws on this signal alone.
 signal quest_updated(quest_id: StringName)
-## A quest was turned in and completed.
+## A quest was completed and its rewards handed out.
 signal quest_completed(quest_id: StringName)
+## A quest became active.
+signal quest_started(quest_id: StringName)
+## One objective of an active quest moved, up or down. [param index] is its place in
+## QuestData.objectives.
+signal quest_objective_progress(quest_id: StringName, index: int, current: int, target: int)
+## The player walked into a QuestTrigger. [param id] is the trigger's marker id.
+signal marker_reached(id: StringName)
+## A quest or one of its objectives asks for a scripted scene. J17's scene runner plays it.
+signal scene_requested(scene_id: StringName)
+## The player earned experience: a quest reward, and from J07 on a kill. J10 listens.
+signal xp_gained(amount: int)
 ## GameState set a story flag for the first time.
 signal flag_set(flag: StringName)
 ## WorldState switched state. [param state] is a WorldState.State value.

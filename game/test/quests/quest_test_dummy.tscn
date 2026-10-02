@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://0p64bw2067cw"]
+
+[ext_resource type="Script" uid="uid://c70rk3j4v6wun" path="res://test/quests/quest_test_dummy.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="2_actor"]
+
+[node name="QuestTestDummy" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Visual" parent="." instance=ExtResource("2_actor")]
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+billboard = 1
+text = "Test dummy"
+
+[node name="Respawn" type="Timer" parent="."]
+wait_time = 5.0
+one_shot = true
