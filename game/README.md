@@ -60,6 +60,8 @@ Running it twice produces the same file. Never edit `palette.gd` by hand; add a 
 | `core/` | Autoloads `EventBus`, `GameState`, `WorldState`, `SaveSystem`, and the generated `Palette` static class |
 | `player/` | Player scene, movement, aim, camera rig (J02) |
 | `combat/` | Health, hitbox, hurtbox, damage info, status effects, projectiles (J03, J04) |
+| `data/status/` | The seven status effects as `.tres` (J03). `data/` is where game data lives, one folder per kind |
+| `test/test_combat.tscn`, `test/combat_dummy.tscn` | The damage tester (J03): three dummies that carry stats, health, a hurtbox and status effects, and keys that hit them, put the effects on them, heal and shield them. The overlay lists the keys. Later combat test scenes instance the dummy |
 | `weapons/`, `skills/` | Weapon and skill data and executors (J04, J05) |
 | `items/` | Item data, affixes, loot tables, inventory, equipment (J06) |
 | `enemies/`, `enemies/bosses/` | Enemy framework, bestiary, bosses (J07 to J09) |

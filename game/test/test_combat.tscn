@@ -1,0 +1,91 @@
+[gd_scene format=3 uid="uid://bcftqpvlh4vy8"]
+
+[ext_resource type="Script" uid="uid://cnpujjfbbkoqt" path="res://test/combat_test_scene.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ce3vhddel48ha" path="res://combat/stat_block.gd" id="2_stats"]
+[ext_resource type="PackedScene" uid="uid://bb18uu10fx5vg" path="res://test/arena.tscn" id="3_arena"]
+[ext_resource type="PackedScene" uid="uid://cgrlfkk01qgxl" path="res://test/combat_dummy.tscn" id="4_dummy"]
+[ext_resource type="PackedScene" uid="uid://crpbhuhon5jsp" path="res://graybox/box_actor.tscn" id="5_actor"]
+[ext_resource type="Script" uid="uid://no27qceex0tg" path="res://combat/resource_pool.gd" id="6_pool"]
+
+[sub_resource type="Resource" id="Resource_tester"]
+script = ExtResource("2_stats")
+base = {
+&"crit_multiplier": 2.0,
+&"max_mana": 50.0,
+&"max_stamina": 100.0
+}
+
+[sub_resource type="Resource" id="Resource_plain"]
+script = ExtResource("2_stats")
+base = {
+&"max_health": 100.0,
+&"move_speed": 4.0
+}
+
+[sub_resource type="Resource" id="Resource_armored"]
+script = ExtResource("2_stats")
+base = {
+&"armor": 100.0,
+&"max_health": 100.0,
+&"move_speed": 4.0
+}
+
+[sub_resource type="Resource" id="Resource_neutral"]
+script = ExtResource("2_stats")
+base = {
+&"frost_resistance": 100.0,
+&"max_health": 100.0,
+&"move_speed": 4.0
+}
+
+[node name="TestCombat" type="Node3D"]
+script = ExtResource("1_script")
+attacker_stats = SubResource("Resource_tester")
+
+[node name="Arena" parent="." instance=ExtResource("3_arena")]
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.573576, 0.819152, 0, -0.819152, 0.573576, 0, 12.97, 6.76)
+current = true
+fov = 40.0
+
+[node name="Dummies" type="Node3D" parent="."]
+
+[node name="Plain" parent="Dummies" instance=ExtResource("4_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0, 0)
+display_name = "Plain"
+stats = SubResource("Resource_plain")
+
+[node name="Armored" parent="Dummies" instance=ExtResource("4_dummy")]
+display_name = "Armored"
+stats = SubResource("Resource_armored")
+
+[node name="Neutral" parent="Dummies" instance=ExtResource("4_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, 0)
+display_name = "Neutral"
+faction = 2
+stats = SubResource("Resource_neutral")
+
+[node name="HitMarker" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+
+[node name="Tester" parent="HitMarker" instance=ExtResource("5_actor")]
+size_class = 1
+
+[node name="Stamina" type="Node" parent="."]
+script = ExtResource("6_pool")
+
+[node name="Mana" type="Node" parent="."]
+script = ExtResource("6_pool")
+stat_key = &"max_mana"
+regen_rate = 4.0
+regen_delay = 0.0
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Overlay"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 17.0
+offset_bottom = 39.0
+theme_override_constants/outline_size = 6
