@@ -123,7 +123,9 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Spawns a hitbox of [param faction] in front of the HitMarker, active for
 ## [member hit_duration], with a packet built from the tester's stats. [param certain_crit]
 ## raises the tester's crit chance to 1 for this one packet. Returns the hitbox.
-func spawn_hit(faction: Factions.Faction, physical: float, frost: float, certain_crit: bool) -> Hitbox:
+func spawn_hit(
+		faction: Factions.Faction, physical: float, frost: float, certain_crit: bool
+) -> Hitbox:
 	if certain_crit:
 		attacker_stats.add_modifier(CRIT_SOURCE, StatBlock.CRIT_CHANCE, CERTAIN_CHANCE, 0.0)
 	var info := DamageInfo.from_stats(attacker_stats, physical, frost, SKILL_MULTIPLIER)
@@ -140,7 +142,8 @@ func spawn_hit(faction: Factions.Faction, physical: float, frost: float, certain
 	shape.shape = box
 	hitbox.add_child(shape)
 	# A thin slab on the ground shows where the hit reaches without hiding the dummies.
-	var mark := Graybox.make_box(Vector3(hit_size.x, HIT_MARK_THICKNESS, hit_size.z), Graybox.MAT_HIGHLIGHT)
+	var mark_size := Vector3(hit_size.x, HIT_MARK_THICKNESS, hit_size.z)
+	var mark := Graybox.make_box(mark_size, Graybox.MAT_HIGHLIGHT)
 	mark.position.y = (HIT_MARK_THICKNESS - hit_size.y) * 0.5
 	hitbox.add_child(mark)
 	# In front of the marker is along its -Z. The hitbox gets its place before it enters the

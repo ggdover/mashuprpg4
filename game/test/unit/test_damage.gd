@@ -599,7 +599,7 @@ func test_a_hurtbox_sits_on_the_layer_of_its_faction() -> void:
 	assert_eq(player.hurtbox.collision_layer, _bit(4), "layer 4, player_hurtbox")
 	assert_eq(enemy.hurtbox.collision_layer, _bit(5), "layer 5, enemy_hurtbox")
 	assert_eq(neutral.hurtbox.collision_layer, _bit(5), "neutral animals share the enemy layer")
-	for target: Target in [player, enemy, neutral]:
+	for target: HitTarget in [player, enemy, neutral]:
 		assert_eq(target.hurtbox.collision_mask, 0, "a hurtbox looks for nothing")
 		assert_false(target.hurtbox.monitoring)
 		assert_true(target.hurtbox.monitorable)
@@ -655,7 +655,7 @@ func test_a_hurtbox_hands_a_hit_to_the_health_at_its_path() -> void:
 
 
 func test_a_hitbox_hits_each_hurtbox_once_per_activation() -> void:
-	var targets: Array[Target] = [
+	var targets: Array[HitTarget] = [
 		_target(Vector3(-1.5, 0.0, 0.0), Factions.Faction.ENEMY),
 		_target(Vector3.ZERO, Factions.Faction.ENEMY),
 		_target(Vector3(1.5, 0.0, 0.0), Factions.Faction.NEUTRAL_ANIMAL),
@@ -664,12 +664,12 @@ func test_a_hitbox_hits_each_hurtbox_once_per_activation() -> void:
 	var hitbox := _hitbox(Vector3.ZERO, Factions.Faction.PLAYER, Vector3(5.0, 1.0, 1.0))
 	watch_signals(hitbox)
 	await _physics_steps(HIT_FRAMES)
-	for target: Target in targets:
+	for target: HitTarget in targets:
 		assert_eq(target.hits, 0, "switched off, the hitbox hits nothing")
 
 	hitbox.active = true
 	await _physics_steps(ACTIVE_FRAMES)
-	for target: Target in targets:
+	for target: HitTarget in targets:
 		assert_eq(target.hits, 1, "one hit each, however many ticks the hitbox stays on")
 		assert_almost_eq(target.health.current, 100.0 - HIT_DAMAGE, TOLERANCE)
 	assert_eq(outside.hits, 0, "a hurtbox the hitbox does not reach is not hit")
@@ -679,7 +679,7 @@ func test_a_hitbox_hits_each_hurtbox_once_per_activation() -> void:
 	await _physics_steps(HIT_FRAMES)
 	hitbox.active = true
 	await _physics_steps(ACTIVE_FRAMES)
-	for target: Target in targets:
+	for target: HitTarget in targets:
 		assert_eq(target.hits, 2, "a new activation hits each of them once more")
 	assert_signal_emit_count(hitbox, "hurtbox_hit", 6)
 
@@ -856,8 +856,8 @@ func _bit(layer: int) -> int:
 
 
 ## A unit-box hurtbox with a health of its own at [param at], in the tree.
-func _target(at: Vector3, faction: Factions.Faction, base: Dictionary = {StatBlock.MAX_HEALTH: 100.0}) -> Target:
-	var target := Target.new()
+func _target(at: Vector3, faction: Factions.Faction, base: Dictionary = {StatBlock.MAX_HEALTH: 100.0}) -> HitTarget:
+	var target := HitTarget.new()
 	target.root = Node3D.new()
 	target.root.position = at
 	target.health = Health.new()
@@ -894,7 +894,7 @@ func _box_shape(size: Vector3) -> CollisionShape3D:
 
 
 ## An actor reduced to what a hit needs: a hurtbox, its health and a count of the hits.
-class Target:
+class HitTarget:
 	extends RefCounted
 
 	var root: Node3D

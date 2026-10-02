@@ -39,11 +39,12 @@ const TIME_EPSILON := 0.0001
 ## While true, [method take_damage] does nothing. The dodge sets it for the length of the dash.
 @export var invulnerable: bool = false
 
-## Called with the packet before mitigation, in order: [code]func(info: DamageInfo) -> bool[/code].
-## An interceptor may change the amounts of the packet it is handed. Returning true cancels
-## the hit: nothing is applied and nothing is sent. Parry cancels, Bulwark halves. Add with
-## [code]interceptors.append(callable)[/code], take away with [code]interceptors.erase(callable)[/code];
-## an interceptor may take itself away while it runs.
+## Called with the packet before mitigation, in order, each as
+## [code]func(info: DamageInfo) -> bool[/code]. An interceptor may change the amounts of the
+## packet it is handed. Returning true cancels the hit: nothing is applied and nothing is
+## sent. Parry cancels, Bulwark halves. Add one with [code]interceptors.append(callable)[/code]
+## and take it away with [code]interceptors.erase(callable)[/code]; an interceptor may take
+## itself away while it runs.
 var interceptors: Array[Callable] = []
 
 ## The health now, from 0 to [member maximum]. Read-only: change it with
@@ -63,7 +64,7 @@ var maximum: float:
 var shield: float:
 	get:
 		var total := 0.0
-		for entry: Shield in _shields:
+		for entry: ShieldPool in _shields:
 			total += entry.amount
 		return total
 	set(_value):
@@ -79,7 +80,7 @@ var _current := 0.0
 var _maximum := 0.0
 var _is_dead := false
 ## The shields that are up, in the order they were added.
-var _shields: Array[Shield] = []
+var _shields: Array[ShieldPool] = []
 
 
 func _ready() -> void:
@@ -129,7 +130,7 @@ func heal(amount: float) -> void:
 func add_shield(amount: float, duration: float) -> void:
 	if amount <= 0.0 or duration <= 0.0:
 		return
-	var entry := Shield.new()
+	var entry := ShieldPool.new()
 	entry.amount = amount
 	entry.time_left = duration
 	_shields.append(entry)
@@ -150,7 +151,7 @@ func revive() -> void:
 func advance(delta: float) -> void:
 	if delta <= 0.0:
 		return
-	for entry: Shield in _shields:
+	for entry: ShieldPool in _shields:
 		entry.time_left -= delta
 	_drop_spent_shields()
 	if _shields.is_empty():
@@ -168,14 +169,18 @@ static func mitigate(amount: float, defence: float) -> float:
 ## others. Returns how much they took.
 func _absorb(amount: float) -> float:
 	var left := amount
-	var by_time_left: Array[Shield] = _shields.duplicate()
-	by_time_left.sort_custom(func(a: Shield, b: Shield) -> bool: return a.time_left < b.time_left)
-	for entry: Shield in by_time_left:
+	var by_time_left: Array[ShieldPool] = _shields.duplicate()
+	by_time_left.sort_custom(_ends_before)
+	for entry: ShieldPool in by_time_left:
 		var taken := minf(left, entry.amount)
 		entry.amount -= taken
 		left -= taken
 	_drop_spent_shields()
 	return amount - left
+
+
+func _ends_before(a: ShieldPool, b: ShieldPool) -> bool:
+	return a.time_left < b.time_left
 
 
 ## Forgets the shields that are used up or whose time is over.
@@ -205,7 +210,7 @@ func _on_stats_changed() -> void:
 
 
 ## One absorb pool with its own clock.
-class Shield:
+class ShieldPool:
 	extends RefCounted
 
 	## What it can still absorb.

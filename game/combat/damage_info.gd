@@ -48,7 +48,9 @@ func copy() -> DamageInfo:
 ## 1 + physical_bonus. Then the crit is rolled: with a chance of crit_chance both amounts
 ## are multiplied by crit_multiplier, which counts as 1 while it is lower, so a crit never
 ## lowers a hit. Without stats the packet holds the base amounts times the multiplier.
-static func from_stats(attacker_stats: StatBlock, base_physical: float, base_frost: float, multiplier: float) -> DamageInfo:
+static func from_stats(
+		attacker_stats: StatBlock, base_physical: float, base_frost: float, multiplier: float
+) -> DamageInfo:
 	var packet := DamageInfo.new()
 	packet.physical = base_physical * multiplier
 	packet.frost = base_frost * multiplier

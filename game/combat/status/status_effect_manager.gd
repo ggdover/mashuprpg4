@@ -62,7 +62,7 @@ var can_act: bool:
 	set(_value):
 		push_error("StatusEffectManager.can_act is read-only.")
 
-## The running effects: id to an Array of [Instance], oldest first. An effect that is not
+## The running effects: id to an Array of [RunningEffect], oldest first. An effect that is not
 ## running has no entry.
 var _effects: Dictionary = {}
 
@@ -88,7 +88,7 @@ func apply(effect: StatusEffectData, source: Node = null) -> void:
 		return
 	var instances: Array = _effects.get(effect.id, [])
 	if instances.is_empty() or effect.stack_rule == StatusEffectData.StackRule.INDEPENDENT:
-		var instance := Instance.new()
+		var instance := RunningEffect.new()
 		instance.data = effect
 		instance.duration = effect.duration
 		instance.source = source
@@ -96,7 +96,7 @@ func apply(effect: StatusEffectData, source: Node = null) -> void:
 		_effects[effect.id] = instances
 		_add_modifiers(effect)
 	else:
-		var running: Instance = instances[0]
+		var running: RunningEffect = instances[0]
 		if effect.stack_rule == StatusEffectData.StackRule.REFRESH:
 			running.duration = running.elapsed + effect.duration
 		else:
@@ -110,7 +110,7 @@ func apply(effect: StatusEffectData, source: Node = null) -> void:
 func remove(id: StringName) -> void:
 	if not _effects.has(id):
 		return
-	for instance: Instance in _effects[id]:
+	for instance: RunningEffect in _effects[id]:
 		instance.ended = true
 	_drop_modifiers(id)
 	_effects.erase(id)
@@ -146,7 +146,7 @@ func get_stacks(id: StringName) -> int:
 ## 0 without it.
 func get_time_left(id: StringName) -> float:
 	var longest := 0.0
-	for instance: Instance in _effects.get(id, []):
+	for instance: RunningEffect in _effects.get(id, []):
 		longest = maxf(longest, instance.duration - instance.elapsed)
 	return longest
 
@@ -160,7 +160,7 @@ func advance(delta: float) -> void:
 		# A tick that kills the actor ends every effect, the ones still waiting in this
 		# loop included, so each is looked up again and asked whether it has ended.
 		var instances: Array = _effects.get(id, [])
-		for instance: Instance in instances.duplicate():
+		for instance: RunningEffect in instances.duplicate():
 			if instance.ended:
 				continue
 			instance.elapsed += delta
@@ -184,7 +184,7 @@ static func is_tick(info: DamageInfo) -> bool:
 ## Deals the damage ticks of [param instance] that have come due. Ticks fall on whole
 ## multiples of the interval, counted from the moment the effect was applied, up to and
 ## including the moment it ends; refreshing or lengthening the effect does not shift them.
-func _deal_due_ticks(instance: Instance) -> void:
+func _deal_due_ticks(instance: RunningEffect) -> void:
 	var data := instance.data
 	if health == null or data.tick_interval <= 0.0:
 		return
@@ -204,7 +204,7 @@ func _deal_due_ticks(instance: Instance) -> void:
 
 
 ## Ends one copy of an effect whose time is up.
-func _end(instance: Instance) -> void:
+func _end(instance: RunningEffect) -> void:
 	instance.ended = true
 	var id := instance.data.id
 	var instances: Array = _effects[id]
@@ -222,7 +222,9 @@ func _add_modifiers(effect: StatusEffectData) -> void:
 	var source := source_key(effect.id)
 	for modifier: Dictionary in effect.modifiers:
 		var stat: StringName = modifier.get("stat", &"")
-		stats.add_modifier(source, stat, float(modifier.get("flat", 0.0)), float(modifier.get("percent", 0.0)))
+		var flat := float(modifier.get("flat", 0.0))
+		var percent := float(modifier.get("percent", 0.0))
+		stats.add_modifier(source, stat, flat, percent)
 
 
 ## Takes the modifiers of the effect with [param id] out of the stats.
@@ -234,13 +236,13 @@ func _drop_modifiers(id: StringName) -> void:
 ## Makes the modifiers in the stats match the copies of the effect that still run.
 func _sync_modifiers(id: StringName) -> void:
 	_drop_modifiers(id)
-	for instance: Instance in _effects.get(id, []):
+	for instance: RunningEffect in _effects.get(id, []):
 		_add_modifiers(instance.data)
 
 
 func _is_stunned() -> bool:
 	for instances: Array in _effects.values():
-		for instance: Instance in instances:
+		for instance: RunningEffect in instances:
 			if instance.data.stun:
 				return true
 	return false
@@ -248,7 +250,7 @@ func _is_stunned() -> bool:
 
 func _is_rooted() -> bool:
 	for instances: Array in _effects.values():
-		for instance: Instance in instances:
+		for instance: RunningEffect in instances:
 			if instance.data.root:
 				return true
 	return false
@@ -261,7 +263,7 @@ func _on_health_damaged(info: DamageInfo, _final_amount: float) -> void:
 
 
 ## One running copy of an effect.
-class Instance:
+class RunningEffect:
 	extends RefCounted
 
 	var data: StatusEffectData

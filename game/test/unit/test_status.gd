@@ -613,8 +613,8 @@ func _packet(physical: float, frost: float) -> DamageInfo:
 
 ## An actor reduced to what status effects need, in the tree: a stat block, a health and a
 ## manager that are wired the way an actor wires them.
-func _actor(base: Dictionary) -> Actor:
-	var actor := Actor.new()
+func _actor(base: Dictionary) -> StatusActor:
+	var actor := StatusActor.new()
 	actor.stats = StatBlock.new()
 	actor.stats.base = base
 	var root := Node.new()
@@ -630,16 +630,16 @@ func _actor(base: Dictionary) -> Actor:
 
 
 ## Runs the manager of [param actor] on by [param seconds], one physics tick at a time.
-func _advance(actor: Actor, seconds: float) -> void:
+func _advance(actor: StatusActor, seconds: float) -> void:
 	_advance_ticks(actor, roundi(seconds * TICKS_PER_SECOND))
 
 
-func _advance_ticks(actor: Actor, ticks: int) -> void:
+func _advance_ticks(actor: StatusActor, ticks: int) -> void:
 	for i: int in ticks:
 		actor.status.advance(TICK)
 
 
-class Actor:
+class StatusActor:
 	extends RefCounted
 
 	var stats: StatBlock

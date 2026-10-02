@@ -72,6 +72,7 @@ Weapons, skills, enemies, UI beyond debug labels.
 - **J18, J19.** `Health.health_changed(current, maximum)` and `ResourcePool.changed(current, maximum)` drive the bars; `Health.shield` is readable and has no signal. `current` is read-only on both, so J19 adds what it needs to restore them from a save.
 - **J20.** `combat/debug_damage_numbers.gd` and the `DamageNumbers` node in `test/combat_dummy.tscn` are what `damage_numbers.tscn` replaces. `Health.revive()` is the respawn: full health, no shields, and `died` can fire again. `damaged` carries `info.is_crit`.
 - **Test dummies.** `test/combat_dummy.tscn` takes `display_name`, `faction` and `stats`; its `health`, `status` and `hurtbox` are public. The body is on layer 3 (enemy_body), not on the world layer, so J04's projectiles do not take it for a wall and the player walks through it as through an enemy. A dead dummy stays dead until something calls `health.revive()`.
+- **Inner classes need names of their own.** A script whose inner class shares its name with a global class stops compiling: `class Actor` in a test breaks on the day another script declares `class_name Actor` (tried in 4.7.2: "Class "Actor" hides a global script class"), and GUT then skips the test script. So the inner classes here are `Health.ShieldPool`, `StatusEffectManager.RunningEffect`, and `HitTarget` and `StatusActor` in the tests.
 
 ## Deviations
 
