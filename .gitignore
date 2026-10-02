@@ -6,3 +6,6 @@ game/export/
 # OS
 .DS_Store
 Thumbs.db
+
+# Agent worktrees created by the harness
+.claude/worktrees/
