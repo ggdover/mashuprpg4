@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://cgrlfkk01qgxl"]
+
+[ext_resource type="Script" uid="uid://t6hc7prteljd" path="res://test/combat_dummy.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ce3vhddel48ha" path="res://combat/stat_block.gd" id="2_stats"]
+[ext_resource type="PackedScene" uid="uid://bb0lo6x3jp10k" path="res://graybox/box_prop.tscn" id="3_prop"]
+[ext_resource type="Script" uid="uid://j74d5e8qoa6l" path="res://combat/health.gd" id="4_health"]
+[ext_resource type="Script" uid="uid://duo814ch1km4s" path="res://combat/status/status_effect_manager.gd" id="5_status"]
+[ext_resource type="Script" uid="uid://cunuqkxwcq5ia" path="res://combat/hurtbox.gd" id="6_hurtbox"]
+[ext_resource type="Script" uid="uid://b6u6hqjpe8gyt" path="res://combat/debug_damage_numbers.gd" id="7_numbers"]
+
+[sub_resource type="Resource" id="Resource_stats"]
+script = ExtResource("2_stats")
+base = {
+&"max_health": 100.0,
+&"move_speed": 4.0
+}
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hurtbox"]
+size = Vector3(1, 1.6, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bar"]
+size = Vector3(1, 0.12, 0.12)
+
+[node name="CombatDummy" type="Node3D"]
+script = ExtResource("1_script")
+stats = SubResource("Resource_stats")
+
+[node name="Body" parent="." instance=ExtResource("3_prop")]
+collision_layer = 4
+size = Vector3(1, 1.6, 1)
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("4_health")
+
+[node name="StatusEffectManager" type="Node" parent="."]
+script = ExtResource("5_status")
+health_path = NodePath("../Health")
+
+[node name="Hurtbox" type="Area3D" parent="."]
+script = ExtResource("6_hurtbox")
+health_path = NodePath("../Health")
+
+[node name="Shape" type="CollisionShape3D" parent="Hurtbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("BoxShape3D_hurtbox")
+
+[node name="HealthBar" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.85, 0)
+mesh = SubResource("BoxMesh_bar")
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+pixel_size = 0.007
+billboard = 1
+no_depth_test = true
+vertical_alignment = 2
+
+[node name="DamageNumbers" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 0.7)
+script = ExtResource("7_numbers")
+health_path = NodePath("../Health")

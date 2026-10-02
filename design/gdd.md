@@ -48,7 +48,7 @@ Initial formulas, all tunable in data:
 
 Hit detection: melee uses an arc or box hitbox in front of the aim direction, active for a few frames. Ranged uses projectiles. All actors have hurtboxes. Dodge grants invulnerability frames.
 
-Status effects: bleed (damage over time), slow, stun, root, armor break, frostbite (slow plus damage over time).
+Status effects: bleed (damage over time), slow, stun, root, armor break, frostbite (slow plus damage over time), burn (damage over time).
 
 Death: the player respawns at the last village or lit cairn. Enemies drop loot and grant XP.
 

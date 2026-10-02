@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatusEffectData" format=3 uid="uid://0yckun1mdaym"]
+
+[ext_resource type="Script" uid="uid://bcc6414kggcqe" path="res://combat/status/status_effect_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"slow"
+duration = 3.0
+modifiers = Array[Dictionary]([{
+"flat": 0.0,
+"percent": -0.4,
+"stat": &"move_speed"
+}])

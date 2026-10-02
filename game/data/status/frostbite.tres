@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StatusEffectData" format=3 uid="uid://dmwjpilgvbdgd"]
+
+[ext_resource type="Script" uid="uid://bcc6414kggcqe" path="res://combat/status/status_effect_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"frostbite"
+duration = 4.0
+tick_interval = 0.5
+modifiers = Array[Dictionary]([{
+"flat": 0.0,
+"percent": -0.3,
+"stat": &"move_speed"
+}])
+dot_frost = 2.0

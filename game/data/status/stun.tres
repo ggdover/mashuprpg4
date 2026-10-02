@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="StatusEffectData" format=3 uid="uid://cjlgia4140vup"]
+
+[ext_resource type="Script" uid="uid://bcc6414kggcqe" path="res://combat/status/status_effect_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"stun"
+duration = 1.5
+stun = true
